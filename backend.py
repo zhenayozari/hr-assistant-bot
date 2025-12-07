@@ -29,6 +29,7 @@ async def test_page():
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+    "https://zhenayozari-hr-assistant-bot-9ea4.twc1.net",
     "https://hr-assistant-bot-216q.onrender.com",
     "http://localhost:8000",
     "*"
