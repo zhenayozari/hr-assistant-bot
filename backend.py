@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import httpx
 import json
 from database import db
-from ai_analyzer import analyze_resume_from_hh
+from ai_analyzer import analyze_resume_from_hh, analyze_resume
 from file_parser import parse_resume_file
 from fastapi import UploadFile, File
 
