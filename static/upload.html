@@ -6,15 +6,19 @@
     <title>Загрузить резюме</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
+            padding-bottom: 90px; /* Отступ под меню */
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
         }
+        
         .container {
             background: white;
             padding: 40px;
@@ -22,8 +26,12 @@
             max-width: 600px;
             width: 100%;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-top: auto;
+            margin-bottom: auto;
         }
+        
         h1 { color: #667eea; margin-bottom: 30px; text-align: center; }
+        
         .upload-area {
             border: 3px dashed #667eea;
             border-radius: 15px;
@@ -35,7 +43,9 @@
         }
         .upload-area:hover { background: #f0f4ff; border-color: #5568d3; }
         .upload-area.dragging { background: #e0e8ff; border-color: #667eea; }
+        
         input[type="file"] { display: none; }
+        
         button {
             width: 100%;
             padding: 15px;
@@ -49,7 +59,8 @@
             transition: all 0.3s;
         }
         button:hover { background: #5568d3; transform: translateY(-2px); }
-        button:disabled { background: #ccc; cursor: not-allowed; }
+        button:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+        
         .result {
             margin-top: 20px;
             padding: 20px;
@@ -58,11 +69,38 @@
             white-space: pre-wrap;
             max-height: 400px;
             overflow-y: auto;
+            font-size: 14px;
+            line-height: 1.5;
         }
         .success { background: #d1fae5; color: #065f46; }
         .error { background: #fee2e2; color: #991b1b; }
         .filename { font-weight: bold; color: #667eea; margin-bottom: 10px; }
         .loading { text-align: center; color: #667eea; font-weight: 600; }
+
+        /* Нижнее меню */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #1e293b;
+            border-top: 1px solid #334155;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 15px 20px 15px;
+            z-index: 1000;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #64748b;
+            text-decoration: none;
+            font-size: 12px;
+            width: 25%;
+        }
+        .nav-item.active { color: #3b82f6; }
+        .nav-icon { font-size: 24px; margin-bottom: 5px; }
     </style>
 </head>
 <body>
@@ -83,8 +121,28 @@
         <div id="result"></div>
     </div>
 
+    <!-- Нижнее меню -->
+    <div class="bottom-nav">
+        <a href="/dashboard" class="nav-item">
+            <div class="nav-icon">📊</div>
+            Дашборд
+        </a>
+        <a href="/vacancies" class="nav-item">
+            <div class="nav-icon">📋</div>
+            Вакансии
+        </a>
+        <a href="/upload" class="nav-item active">
+            <div class="nav-icon">📄</div>
+            Анализ
+        </a>
+        <a href="/settings" class="nav-item">
+            <div class="nav-icon">⚙️</div>
+            Настройки
+        </a>
+    </div>
+
     <script>
-        const API_BASE = ''; // Пустая строка означает "текущий домен"
+        const API_BASE = ''; // Относительный путь
         const uploadArea = document.getElementById('uploadArea');
         const fileInput = document.getElementById('fileInput');
         const uploadBtn = document.getElementById('uploadBtn');

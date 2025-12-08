@@ -6,14 +6,18 @@
     <title>Настройки компании</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; } /* Исправляет скачки размеров */
+        
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #0f172a;
             color: white;
             padding: 20px;
+            padding-bottom: 90px; /* Отступ, чтобы меню не закрывало контент */
         }
         .container { max-width: 600px; margin: 0 auto; }
-        h1 { margin-bottom: 20px; }
+        h1 { margin-bottom: 20px; font-size: 28px; }
+        
         .card {
             background: #1e293b;
             padding: 20px;
@@ -21,7 +25,9 @@
             margin-bottom: 20px;
             border: 1px solid #334155;
         }
+        
         label { display: block; margin-bottom: 8px; color: #94a3b8; font-size: 14px; }
+        
         input, textarea {
             width: 100%;
             padding: 12px;
@@ -30,8 +36,15 @@
             border-radius: 8px;
             color: white;
             margin-bottom: 15px;
+            font-size: 16px; /* Чтобы на айфоне не приближало */
         }
-        button {
+        
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        button.save-btn {
             width: 100%;
             padding: 15px;
             background: #3b82f6;
@@ -41,19 +54,47 @@
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
+            transition: background 0.2s;
         }
-        button:hover { background: #2563eb; }
-        .status { margin-top: 10px; font-size: 14px; text-align: center; }
+        button.save-btn:hover { background: #2563eb; }
+        
+        .status { margin-top: 10px; font-size: 14px; text-align: center; min-height: 20px; }
         .success { color: #10b981; }
         .error { color: #ef4444; }
+
+        /* Нижнее меню */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #1e293b;
+            border-top: 1px solid #334155;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 15px 20px 15px; /* Чуть больше отступ снизу для iPhone */
+            z-index: 1000;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #64748b;
+            text-decoration: none;
+            font-size: 12px;
+            width: 25%;
+        }
+        .nav-item.active { color: #3b82f6; }
+        .nav-icon { font-size: 24px; margin-bottom: 5px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>⚙️ Кабинет компании</h1>
+        <h1>⚙️ Настройки</h1>
 
         <div class="card">
             <h3>О компании</h3>
+            <br>
             <label>Название компании</label>
             <input type="text" id="companyName" placeholder="Например: ООО Ромашка">
             
@@ -64,17 +105,37 @@
         <div class="card">
             <h3>Интеграция с HH.ru</h3>
             <p style="font-size: 12px; color: #64748b; margin-bottom: 10px;">
-                Чтобы автоматически загружать отклики, нужно создать приложение на dev.hh.ru и получить Client ID.
+                Client ID приложения на dev.hh.ru
             </p>
             <label>Client ID</label>
             <input type="text" id="hhClientId" placeholder="Вставь Client ID">
             
             <label>Employer ID (ID работодателя)</label>
-            <input type="text" id="hhEmployerId" placeholder="Цифры из ссылки на вашу компанию на HH">
+            <input type="text" id="hhEmployerId" placeholder="Цифры из ссылки на компанию">
         </div>
 
-        <button onclick="saveSettings()">Сохранить настройки</button>
+        <button class="save-btn" onclick="saveSettings()">Сохранить настройки</button>
         <div id="status" class="status"></div>
+    </div>
+
+    <!-- Нижнее меню -->
+    <div class="bottom-nav">
+        <a href="/dashboard" class="nav-item">
+            <div class="nav-icon">📊</div>
+            Дашборд
+        </a>
+        <a href="/vacancies" class="nav-item">
+            <div class="nav-icon">📋</div>
+            Вакансии
+        </a>
+        <a href="/upload" class="nav-item">
+            <div class="nav-icon">📄</div>
+            Анализ
+        </a>
+        <a href="/settings" class="nav-item active">
+            <div class="nav-icon">⚙️</div>
+            Настройки
+        </a>
     </div>
 
     <script>
@@ -82,7 +143,7 @@
         tg.expand();
 
         // Получаем ID пользователя из Telegram
-        const userId = tg.initDataUnsafe?.user?.id || 'test_user_123'; // Заглушка для тестов в браузере
+        const userId = tg.initDataUnsafe?.user?.id || 'test_user_123';
 
         // Загрузка текущих данных
         async function loadData() {
@@ -103,7 +164,7 @@
 
         // Сохранение данных
         async function saveSettings() {
-            const btn = document.querySelector('button');
+            const btn = document.querySelector('button.save-btn');
             const status = document.getElementById('status');
             
             btn.disabled = true;
@@ -125,9 +186,8 @@
                 });
 
                 if (res.ok) {
-                    status.textContent = '✅ Данные успешно сохранены!';
+                    status.textContent = '✅ Сохранено!';
                     status.className = 'status success';
-                    setTimeout(() => tg.close(), 1500); // Закрыть окно через 1.5 сек
                 } else {
                     throw new Error('Ошибка сервера');
                 }
