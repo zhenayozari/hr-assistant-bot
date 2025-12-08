@@ -30,6 +30,10 @@ async def test_page():
 async def upload_page():
     return FileResponse("static/upload.html")
 
+@app.get("/dashboard")
+async def dashboard_page():
+    return FileResponse("static/dashboard.html")
+
 # CORS для Mini App
 app.add_middleware(
     CORSMiddleware,

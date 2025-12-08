@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Дашборд</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a;
+            color: white;
+            padding: 20px;
+        }
+        .header { margin-bottom: 30px; }
+        h1 { font-size: 32px; margin-bottom: 10px; }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: #1e293b;
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid #334155;
+        }
+        .stat-label { color: #94a3b8; font-size: 14px; margin-bottom: 10px; }
+        .stat-value { font-size: 36px; font-weight: bold; }
+        .stat-change { color: #10b981; font-size: 14px; margin-top: 10px; }
+        .chart-card {
+            background: #1e293b;
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid #334155;
+        }
+        .chart-title { font-size: 18px; margin-bottom: 20px; }
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            height: 200px;
+            gap: 10px;
+        }
+        .bar {
+            flex: 1;
+            background: linear-gradient(to top, #3b82f6, #60a5fa);
+            border-radius: 8px 8px 0 0;
+            position: relative;
+            transition: all 0.3s;
+        }
+        .bar:hover { opacity: 0.8; transform: translateY(-5px); }
+        .bar-label {
+            text-align: center;
+            color: #94a3b8;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #1e293b;
+            border-top: 1px solid #334155;
+            display: flex;
+            justify-content: space-around;
+            padding: 15px;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #64748b;
+            text-decoration: none;
+            font-size: 12px;
+        }
+        .nav-item.active { color: #3b82f6; }
+        .nav-icon { font-size: 24px; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Дашборд</h1>
+    </div>
+
+    <div class="stats">
+        <div class="stat-card">
+            <div class="stat-label">Отклики за сегодня</div>
+            <div class="stat-value">11</div>
+            <div class="stat-change">+2 vs вчера</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Новые кандидаты</div>
+            <div class="stat-value">28</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Активные вакансии</div>
+            <div class="stat-value">5</div>
+        </div>
+    </div>
+
+    <div class="chart-card">
+        <div class="chart-title">Отклики за неделю</div>
+        <div class="bar-chart">
+            <div style="flex: 1;">
+                <div class="bar" style="height: 25%;"></div>
+                <div class="bar-label">Пн</div>
+            </div>
+            <div style="flex: 1;">
+                <div class="bar" style="height: 45%;"></div>
+                <div class="bar-label">Вт</div>
+            </div>
+            <div style="flex: 1;">
+                <div class="bar" style="height: 30%;"></div>
+                <div class="bar-label">Ср</div>
+            </div>
+            <div style="flex: 1;">
+                <div class="bar" style="height: 65%;"></div>
+                <div class="bar-label">Чт</div>
+            </div>
+            <div style="flex: 1;">
+                <div class="bar" style="height: 50%;"></div>
+                <div class="bar-label">Пт</div>
+            </div>
+            <div style="flex: 1;">
+                <div class="bar" style="height: 95%;"></div>
+                <div class="bar-label">Сб</div>
+            </div>
+            <div style="flex: 1;">
+                <div class="bar" style="height: 20%;"></div>
+                <div class="bar-label">Вс</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <a href="/dashboard" class="nav-item active">
+            <div class="nav-icon">📊</div>
+            Дашборд
+        </a>
+        <a href="/vacancies" class="nav-item">
+            <div class="nav-icon">📋</div>
+            Вакансии
+        </a>
+        <a href="/upload" class="nav-item">
+            <div class="nav-icon">📄</div>
+            Анализ
+        </a>
+        <a href="/settings" class="nav-item">
+            <div class="nav-icon">⚙️</div>
+            Настройки
+        </a>
+    </div>
+
+    <div style="height: 80px;"></div>
+</body>
+</html>
