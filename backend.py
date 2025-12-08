@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import httpx
 import json
 from database import db
-from ai_analyzer import analyze_resume_from_hh, analyze_resume
+from ai_analyzer import analyze_resume_from_hh, analyze_resume, generate_vacancy_profile
 from file_parser import parse_resume_file
 from fastapi import UploadFile, File
 
@@ -187,6 +187,18 @@ async def save_vacancy(request: Request):
         criteria=data.get('pro_talk_criteria')
     )
     return {"success": True}
+
+@app.post("/api/vacancies/generate")
+async def generate_vacancy(request: Request):
+    """Генерирует описание вакансии по названию"""
+    data = await request.json()
+    title = data.get('title')
+    
+    if not title:
+        raise HTTPException(status_code=400, detail="Title is required")
+        
+    profile = generate_vacancy_profile(title)
+    return profile
 
 @app.get("/api/vacancies/{vacancy_id}/{user_id}")
 async def get_vacancy(vacancy_id: int, user_id: str):

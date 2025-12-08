@@ -112,5 +112,46 @@ def analyze_resume_from_hh(full_resume: Dict[str, Any], criteria: str = None) ->
     resume_text = format_resume_for_analysis(full_resume)
     return analyze_resume(resume_text, criteria)
 
+def generate_vacancy_profile(title: str) -> Dict[str, Any]:
+    """
+    Генерирует профиль вакансии по названию через OpenAI
+    """
+    prompt = f"""
+    Я HR-менеджер. Я хочу открыть вакансию: "{title}".
+    Составь мне профиль этой вакансии для поиска кандидата.
+    
+    Верни СТРОГО JSON (без лишнего текста):
+    {{
+        "hard_skills": "список ключевых технических навыков через запятую",
+        "soft_skills": "список мягких навыков через запятую",
+        "experience": "требуемый опыт (например: от 1 до 3 лет)",
+        "description": "краткое привлекательное описание вакансии (2-3 предложения)",
+        "criteria": "критерии для ИИ, который будет оценивать резюме (на что смотреть в первую очередь)"
+    }}
+    """
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "Ты опытный IT-рекрутер."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            response_format={"type": "json_object"}
+        )
+        
+        result_text = response.choices[0].message.content
+        return json.loads(result_text)
+        
+    except Exception as e:
+        return {
+            "error": str(e),
+            "hard_skills": "",
+            "soft_skills": "",
+            "description": "Ошибка генерации",
+            "criteria": ""
+        }
+
 # Экспорт функций
-__all__ = ['analyze_resume', 'analyze_resume_from_hh', 'format_resume_for_analysis']
+__all__ = ['analyze_resume', 'analyze_resume_from_hh', 'format_resume_for_analysis', 'generate_vacancy_profile']
