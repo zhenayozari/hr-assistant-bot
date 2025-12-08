@@ -93,11 +93,11 @@
         </div>
         <div class="stat-card">
             <div class="stat-label">Новые кандидаты</div>
-            <div class="stat-value">28</div>
+            <div class="stat-value" id="statCandidates">...</div>
         </div>
         <div class="stat-card">
             <div class="stat-label">Активные вакансии</div>
-            <div class="stat-value">5</div>
+            <div class="stat-value" id="statVacancies">...</div>
         </div>
     </div>
 
@@ -155,5 +155,29 @@
     </div>
 
     <div style="height: 80px;"></div>
-</body>
+
+<script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        const userId = tg.initDataUnsafe?.user?.id || 'test_user_123';
+
+        async function loadStats() {
+            try {
+                const res = await fetch(`/api/dashboard/stats/${userId}`);
+                const data = await res.json();
+                
+                // Обновляем цифры на экране
+                document.getElementById('statCandidates').textContent = data.candidates;
+                document.getElementById('statVacancies').textContent = data.vacancies;
+                
+            } catch (e) {
+                console.error('Ошибка загрузки статистики');
+            }
+        }
+
+        loadStats();
+    </script>
+</body> 
+    
+
 </html>

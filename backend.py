@@ -14,7 +14,7 @@ import json
 from database import db
 from ai_analyzer import analyze_resume_from_hh, analyze_resume, generate_vacancy_profile
 from file_parser import parse_resume_file
-from fastapi import UploadFile, File
+from fastapi import UploadFile, File, Form
 
 
 app = FastAPI()
@@ -283,9 +283,14 @@ async def analyze_candidate(request: Request):
 
 # === ЗАГРУЗКА РЕЗЮМЕ ===
 
+# === ЗАГРУЗКА РЕЗЮМЕ ===
+
 @app.post("/api/upload_resume")
-async def upload_resume(file: UploadFile = File(...)):
-    """Загрузить и распарсить резюме"""
+async def upload_resume(
+    file: UploadFile = File(...), 
+    user_id: str = Form(...)  # <--- Теперь мы требуем ID пользователя
+):
+    """Загрузить, распарсить и СОХРАНИТЬ резюме"""
     
     # Читаем файл
     content = await file.read()
@@ -299,11 +304,30 @@ async def upload_resume(file: UploadFile = File(...)):
     # Анализируем через AI
     analysis = analyze_resume(result["text"], "Оцени кандидата")
     
+    # === СОХРАНЕНИЕ В БАЗУ ===
+    import time
+    new_id = int(time.time()) # Генерируем ID на основе времени
+    
+    db.save_candidate(
+        candidate_id=new_id,
+        user_id=user_id,
+        vacancy_id=0, # 0 = без привязки к вакансии (пока так)
+        full_name=result["filename"], # Пока имя файла вместо имени человека
+        analysis_result=analysis, # Сохраняем вердикт ИИ
+        resume_url="local_file"
+    )
+    # =========================
+    
     return {
         "filename": result["filename"],
-        "text": result["text"][:500] + "...",  # Первые 500 символов
+        "text": result["text"][:500] + "...",
         "analysis": analysis
     }
+
+# === API ДЛЯ ДАШБОРДА (НОВОЕ) ===
+@app.get("/api/dashboard/stats/{user_id}")
+async def get_dashboard_stats(user_id: str):
+    return db.get_dashboard_stats(user_id)
 
 if __name__ == "__main__":
     import uvicorn

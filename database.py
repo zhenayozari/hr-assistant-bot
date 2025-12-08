@@ -196,5 +196,30 @@ class Database:
         conn.close()
         return dict(row) if row else None
 
+    # ... (код метода get_candidate) ...
+        return dict(row) if row else None
+
+    # === НОВЫЙ МЕТОД СЮДА ===
+    def get_dashboard_stats(self, user_id: str) -> Dict[str, int]:
+        """Получить статистику для дашборда"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        # Считаем вакансии
+        cursor.execute("SELECT COUNT(*) FROM vacancies WHERE user_id = ?", (user_id,))
+        vacancies_count = cursor.fetchone()[0]
+        
+        # Считаем кандидатов
+        cursor.execute("SELECT COUNT(*) FROM candidates WHERE user_id = ?", (user_id,))
+        candidates_count = cursor.fetchone()[0]
+        
+        conn.close()
+        return {
+            "vacancies": vacancies_count,
+            "candidates": candidates_count,
+            "today": 0 # Пока заглушка для "сегодня"
+        }
+    # ========================
+
 # Создаём глобальный экземпляр
 db = Database()
