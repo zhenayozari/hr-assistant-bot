@@ -13,6 +13,8 @@ import httpx
 import json
 from database import db
 from ai_analyzer import analyze_resume_from_hh
+from file_parser import parse_resume_file
+from fastapi import UploadFile, File
 
 
 app = FastAPI()
@@ -241,6 +243,30 @@ async def analyze_candidate(request: Request):
     result = analyze_resume_from_hh(full_resume, criteria)
     
     return result
+
+# === ЗАГРУЗКА РЕЗЮМЕ ===
+
+@app.post("/api/upload_resume")
+async def upload_resume(file: UploadFile = File(...)):
+    """Загрузить и распарсить резюме"""
+    
+    # Читаем файл
+    content = await file.read()
+    
+    # Парсим
+    result = parse_resume_file(file.filename, content)
+    
+    if result.get("error"):
+        raise HTTPException(status_code=400, detail=result["error"])
+    
+    # Анализируем через AI
+    analysis = analyze_resume(result["text"], "Оцени кандидата")
+    
+    return {
+        "filename": result["filename"],
+        "text": result["text"][:500] + "...",  # Первые 500 символов
+        "analysis": analysis
+    }
 
 if __name__ == "__main__":
     import uvicorn

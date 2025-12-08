@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Загрузить резюме</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 { color: #667eea; margin-bottom: 30px; text-align: center; }
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+        .upload-area:hover { background: #f0f4ff; border-color: #5568d3; }
+        .upload-area.dragging { background: #e0e8ff; border-color: #667eea; }
+        input[type="file"] { display: none; }
+        button {
+            width: 100%;
+            padding: 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        button:hover { background: #5568d3; transform: translateY(-2px); }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            background: #f3f4f6;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success { background: #d1fae5; color: #065f46; }
+        .error { background: #fee2e2; color: #991b1b; }
+        .filename { font-weight: bold; color: #667eea; margin-bottom: 10px; }
+        .loading { text-align: center; color: #667eea; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📄 Загрузить резюме</h1>
+        
+        <div class="upload-area" id="uploadArea">
+            <p style="font-size: 48px; margin-bottom: 10px;">📎</p>
+            <p style="font-size: 18px; color: #667eea; font-weight: 600;">Перетащи файл сюда</p>
+            <p style="color: #6b7280; margin-top: 10px;">или нажми чтобы выбрать</p>
+            <p style="color: #9ca3af; font-size: 14px; margin-top: 10px;">PDF или DOCX</p>
+        </div>
+        
+        <input type="file" id="fileInput" accept=".pdf,.docx">
+        
+        <button id="uploadBtn" disabled>Загрузить и анализировать</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://zhenayozari-hr-assistant-bot-9ea4.twc1.net';
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const resultDiv = document.getElementById('result');
+        let selectedFile = null;
+
+        uploadArea.onclick = () => fileInput.click();
+
+        fileInput.onchange = (e) => {
+            selectedFile = e.target.files[0];
+            if (selectedFile) {
+                uploadArea.innerHTML = `<p style="font-size: 48px;">✅</p><p style="color: #10b981; font-weight: 600;">${selectedFile.name}</p>`;
+                uploadBtn.disabled = false;
+            }
+        };
+
+        // Drag & Drop
+        uploadArea.ondragover = (e) => { e.preventDefault(); uploadArea.classList.add('dragging'); };
+        uploadArea.ondragleave = () => uploadArea.classList.remove('dragging');
+        uploadArea.ondrop = (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragging');
+            selectedFile = e.dataTransfer.files[0];
+            if (selectedFile) {
+                uploadArea.innerHTML = `<p style="font-size: 48px;">✅</p><p style="color: #10b981; font-weight: 600;">${selectedFile.name}</p>`;
+                uploadBtn.disabled = false;
+            }
+        };
+
+        uploadBtn.onclick = async () => {
+            if (!selectedFile) return;
+            
+            uploadBtn.disabled = true;
+            resultDiv.innerHTML = '<div class="result loading">🤖 Анализирую резюме через AI...</div>';
+            
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            
+            try {
+                const res = await fetch(`${API_BASE}/api/upload_resume`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await res.json();
+                
+                if (data.analysis && data.analysis.verdict) {
+                    const emoji = data.analysis.verdict === 'Подходит' ? '✅' : '❌';
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            <div class="filename">${data.filename}</div>
+                            <p><strong>${emoji} ${data.analysis.verdict}</strong></p>
+                            <p style="margin-top: 10px;">${data.analysis.reason}</p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="result success">${JSON.stringify(data, null, 2)}</div>`;
+                }
+            } catch (e) {
+                resultDiv.innerHTML = `<div class="result error">Ошибка: ${e.message}</div>`;
+            } finally {
+                uploadBtn.disabled = false;
+            }
+        };
+    </script>
+</body>
+</html>
