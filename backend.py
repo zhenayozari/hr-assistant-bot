@@ -204,6 +204,11 @@ async def generate_vacancy(request: Request):
     profile = generate_vacancy_profile(title)
     return profile
 
+@app.get("/api/vacancies/list/{user_id}")
+async def get_all_vacancies(user_id: str):
+    """Получить список всех вакансий"""
+    return db.get_all_vacancies(user_id)
+
 @app.get("/api/vacancies/{vacancy_id}/{user_id}")
 async def get_vacancy(vacancy_id: int, user_id: str):
     """Получить вакансию"""

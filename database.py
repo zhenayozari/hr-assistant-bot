@@ -131,6 +131,18 @@ class Database:
         conn.commit()
         conn.close()
     
+    def get_all_vacancies(self, user_id: str) -> List[Dict[str, Any]]:
+        """Получить все вакансии пользователя"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT * FROM vacancies WHERE user_id = ? ORDER BY created_at DESC",
+            (user_id,)
+        )
+        rows = cursor.fetchall()
+        conn.close()
+        return [dict(row) for row in rows]
+
     def get_vacancy(self, vacancy_id: int, user_id: str) -> Optional[Dict[str, Any]]:
         """Получить вакансию"""
         conn = self.get_connection()
