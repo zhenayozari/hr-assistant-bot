@@ -112,5 +112,5 @@ def analyze_resume_from_hh(full_resume: Dict[str, Any], criteria: str = None) ->
     resume_text = format_resume_for_analysis(full_resume)
     return analyze_resume(resume_text, criteria)
 
-        # Экспорт функций
-    __all__ = ['analyze_resume', 'analyze_resume_from_hh', 'format_resume_for_analysis']
+# Экспорт функций
+__all__ = ['analyze_resume', 'analyze_resume_from_hh', 'format_resume_for_analysis']
