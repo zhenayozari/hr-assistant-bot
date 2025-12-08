@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вакансии</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a;
+            color: white;
+            padding: 20px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        h1 { font-size: 28px; }
+        .add-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            background: transparent;
+            border: none;
+            color: #64748b;
+            font-size: 16px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        .tab.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+        }
+        .vacancy-list { display: flex; flex-direction: column; gap: 15px; margin-bottom: 80px; }
+        .vacancy-card {
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid #334155;
+        }
+        .vacancy-title { font-size: 18px; font-weight: 600; margin-bottom: 10px; }
+        .vacancy-meta {
+            display: flex;
+            gap: 15px;
+            color: #94a3b8;
+            font-size: 14px;
+        }
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #1e293b;
+            border-top: 1px solid #334155;
+            display: flex;
+            justify-content: space-around;
+            padding: 15px;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #64748b;
+            text-decoration: none;
+            font-size: 12px;
+        }
+        .nav-item.active { color: #3b82f6; }
+        .nav-icon { font-size: 24px; margin-bottom: 5px; }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748b;
+        }
+        .empty-icon { font-size: 64px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Вакансии</h1>
+        <button class="add-btn">+ Добавить</button>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active">Активные</button>
+        <button class="tab">Архивные</button>
+    </div>
+
+    <div class="vacancy-list">
+        <div class="vacancy-card">
+            <div class="vacancy-title">Senior Python Developer</div>
+            <div class="vacancy-meta">
+                <span>👥 15 откликов</span>
+                <span>✅ 8 подходит</span>
+            </div>
+        </div>
+        
+        <div class="vacancy-card">
+            <div class="vacancy-title">Frontend React Developer</div>
+            <div class="vacancy-meta">
+                <span>👥 23 отклика</span>
+                <span>✅ 12 подходит</span>
+            </div>
+        </div>
+        
+        <div class="vacancy-card">
+            <div class="vacancy-title">DevOps Engineer</div>
+            <div class="vacancy-meta">
+                <span>👥 9 откликов</span>
+                <span>✅ 3 подходит</span>
+            </div>
+        </div>
+        
+        <div class="vacancy-card">
+            <div class="vacancy-title">Product Manager</div>
+            <div class="vacancy-meta">
+                <span>👥 31 отклик</span>
+                <span>✅ 18 подходит</span>
+            </div>
+        </div>
+        
+        <div class="vacancy-card">
+            <div class="vacancy-title">QA Automation Engineer</div>
+            <div class="vacancy-meta">
+                <span>👥 12 откликов</span>
+                <span>✅ 5 подходит</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <a href="/dashboard" class="nav-item">
+            <div class="nav-icon">📊</div>
+            Дашборд
+        </a>
+        <a href="/vacancies" class="nav-item active">
+            <div class="nav-icon">📋</div>
+            Вакансии
+        </a>
+        <a href="/upload" class="nav-item">
+            <div class="nav-icon">📄</div>
+            Анализ
+        </a>
+        <a href="/settings" class="nav-item">
+            <div class="nav-icon">⚙️</div>
+            Настройки
+        </a>
+    </div>
+</body>
+</html>
