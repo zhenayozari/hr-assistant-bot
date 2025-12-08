@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Вакансии</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -11,138 +12,150 @@
             background: #0f172a;
             color: white;
             padding: 20px;
+            padding-bottom: 90px;
         }
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
         h1 { font-size: 28px; }
         .add-btn {
             background: #3b82f6;
             color: white;
             border: none;
-            padding: 12px 24px;
+            padding: 10px 20px;
             border-radius: 10px;
-            font-size: 16px;
+            font-size: 14px;
             cursor: pointer;
             font-weight: 600;
         }
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        .tab {
-            padding: 10px 20px;
-            background: transparent;
-            border: none;
-            color: #64748b;
-            font-size: 16px;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-        }
-        .tab.active {
-            color: #3b82f6;
-            border-bottom-color: #3b82f6;
-        }
-        .vacancy-list { display: flex; flex-direction: column; gap: 15px; margin-bottom: 80px; }
+        
+        /* Карточки вакансий */
+        .vacancy-list { display: flex; flex-direction: column; gap: 15px; }
         .vacancy-card {
             background: #1e293b;
             padding: 20px;
             border-radius: 15px;
             border: 1px solid #334155;
         }
-        .vacancy-title { font-size: 18px; font-weight: 600; margin-bottom: 10px; }
-        .vacancy-meta {
-            display: flex;
-            gap: 15px;
-            color: #94a3b8;
-            font-size: 14px;
+        .vacancy-title { font-size: 18px; font-weight: 600; margin-bottom: 5px; }
+        .vacancy-meta { color: #94a3b8; font-size: 13px; }
+
+        /* Модальное окно */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: #1e293b;
+            padding: 25px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 1px solid #334155;
+        }
+        
+        /* Форма */
+        label { display: block; margin-top: 15px; margin-bottom: 5px; color: #94a3b8; font-size: 14px; }
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+        }
+        .ai-btn {
+            width: 100%;
+            margin-top: 10px;
+            background: linear-gradient(45deg, #8b5cf6, #ec4899);
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .save-btn {
+            width: 100%;
+            margin-top: 20px;
+            background: #10b981;
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .close-btn {
+            float: right;
+            background: none; border: none; color: #94a3b8; font-size: 24px; cursor: pointer;
+        }
+
+        /* Нижнее меню */
         .bottom-nav {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
+            bottom: 0; left: 0; right: 0;
             background: #1e293b;
             border-top: 1px solid #334155;
             display: flex;
             justify-content: space-around;
-            padding: 15px;
+            padding: 10px 15px 20px 15px;
+            z-index: 1000;
         }
         .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: #64748b;
-            text-decoration: none;
-            font-size: 12px;
+            display: flex; flex-direction: column; align-items: center;
+            color: #64748b; text-decoration: none; font-size: 12px; width: 25%;
         }
         .nav-item.active { color: #3b82f6; }
         .nav-icon { font-size: 24px; margin-bottom: 5px; }
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #64748b;
-        }
-        .empty-icon { font-size: 64px; margin-bottom: 20px; }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>Вакансии</h1>
-        <button class="add-btn">+ Добавить</button>
+        <button class="add-btn" onclick="openModal()">+ Создать</button>
     </div>
 
-    <div class="tabs">
-        <button class="tab active">Активные</button>
-        <button class="tab">Архивные</button>
+    <div id="vacancyList" class="vacancy-list">
+        <div style="text-align: center; color: #64748b; margin-top: 50px;">Загрузка...</div>
     </div>
 
-    <div class="vacancy-list">
-        <div class="vacancy-card">
-            <div class="vacancy-title">Senior Python Developer</div>
-            <div class="vacancy-meta">
-                <span>👥 15 откликов</span>
-                <span>✅ 8 подходит</span>
-            </div>
-        </div>
-        
-        <div class="vacancy-card">
-            <div class="vacancy-title">Frontend React Developer</div>
-            <div class="vacancy-meta">
-                <span>👥 23 отклика</span>
-                <span>✅ 12 подходит</span>
-            </div>
-        </div>
-        
-        <div class="vacancy-card">
-            <div class="vacancy-title">DevOps Engineer</div>
-            <div class="vacancy-meta">
-                <span>👥 9 откликов</span>
-                <span>✅ 3 подходит</span>
-            </div>
-        </div>
-        
-        <div class="vacancy-card">
-            <div class="vacancy-title">Product Manager</div>
-            <div class="vacancy-meta">
-                <span>👥 31 отклик</span>
-                <span>✅ 18 подходит</span>
-            </div>
-        </div>
-        
-        <div class="vacancy-card">
-            <div class="vacancy-title">QA Automation Engineer</div>
-            <div class="vacancy-meta">
-                <span>👥 12 откликов</span>
-                <span>✅ 5 подходит</span>
-            </div>
+    <!-- Модальное окно создания -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+            <h2>Новая вакансия</h2>
+            
+            <label>Название должности</label>
+            <input type="text" id="vacTitle" placeholder="Например: Python Developer">
+            
+            <button class="ai-btn" onclick="generateWithAI()">✨ Заполнить через AI</button>
+            
+            <label>Описание</label>
+            <textarea id="vacDesc" rows="4"></textarea>
+            
+            <label>Критерии (для ИИ-анализа)</label>
+            <textarea id="vacCriteria" rows="3" placeholder="На что обращать внимание?"></textarea>
+            
+            <button class="save-btn" onclick="saveVacancy()">Сохранить</button>
         </div>
     </div>
 
+    <!-- Нижнее меню -->
     <div class="bottom-nav">
         <a href="/dashboard" class="nav-item">
             <div class="nav-icon">📊</div>
@@ -161,5 +174,96 @@
             Настройки
         </a>
     </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        const userId = tg.initDataUnsafe?.user?.id || 'test_user_123';
+
+        // Загрузка списка
+        async function loadVacancies() {
+            const list = document.getElementById('vacancyList');
+            try {
+                const res = await fetch(`/api/vacancies/list/${userId}`);
+                const data = await res.json();
+                
+                if (data.length === 0) {
+                    list.innerHTML = '<div style="text-align: center; color: #64748b; margin-top: 50px;">Нет активных вакансий</div>';
+                    return;
+                }
+
+                list.innerHTML = data.map(v => `
+                    <div class="vacancy-card">
+                        <div class="vacancy-title">${v.title}</div>
+                        <div class="vacancy-meta">ID: ${v.id} • Создано: ${new Date(v.created_at).toLocaleDateString()}</div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                list.innerHTML = '<div style="color: #ef4444; text-align: center;">Ошибка загрузки</div>';
+            }
+        }
+
+        // Генерация через AI
+        async function generateWithAI() {
+            const title = document.getElementById('vacTitle').value;
+            const btn = document.querySelector('.ai-btn');
+            
+            if (!title) return alert('Введите название вакансии!');
+            
+            btn.disabled = true;
+            btn.textContent = '✨ Думаю...';
+            
+            try {
+                const res = await fetch('/api/vacancies/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title })
+                });
+                const data = await res.json();
+                
+                if (data.error) throw new Error(data.error);
+                
+                document.getElementById('vacDesc').value = 
+                    `Описание:\n${data.description}\n\nHard Skills: ${data.hard_skills}\nSoft Skills: ${data.soft_skills}`;
+                document.getElementById('vacCriteria').value = data.criteria;
+                
+            } catch (e) {
+                alert('Ошибка AI: ' + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '✨ Заполнить через AI';
+            }
+        }
+
+        // Сохранение
+        async function saveVacancy() {
+            const title = document.getElementById('vacTitle').value;
+            const criteria = document.getElementById('vacCriteria').value;
+            
+            if (!title) return alert('Название обязательно!');
+
+            try {
+                await fetch('/api/vacancies', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: Date.now(), // Временный ID
+                        user_id: userId.toString(),
+                        title: title,
+                        pro_talk_criteria: criteria
+                    })
+                });
+                closeModal();
+                loadVacancies();
+            } catch (e) {
+                alert('Ошибка сохранения');
+            }
+        }
+
+        function openModal() { document.getElementById('modal').classList.add('active'); }
+        function closeModal() { document.getElementById('modal').classList.remove('active'); }
+
+        loadVacancies();
+    </script>
 </body>
 </html>

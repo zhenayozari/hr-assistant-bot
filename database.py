@@ -143,6 +143,18 @@ class Database:
         conn.close()
         return dict(row) if row else None
     
+    def get_all_vacancies(self, user_id: str) -> List[Dict[str, Any]]:
+        """Получить все вакансии пользователя"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT * FROM vacancies WHERE user_id = ? ORDER BY created_at DESC",
+            (user_id,)
+        )
+        rows = cursor.fetchall()
+        conn.close()
+        return [dict(row) for row in rows]
+
     # === КАНДИДАТЫ ===
     
     def save_candidate(self, candidate_id: int, user_id: str, vacancy_id: int, 

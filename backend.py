@@ -212,6 +212,11 @@ async def get_vacancy(vacancy_id: int, user_id: str):
         raise HTTPException(status_code=404, detail="Vacancy not found")
     return vacancy
 
+@app.get("/api/vacancies/list/{user_id}")
+async def get_all_vacancies(user_id: str):
+    """Получить список всех вакансий"""
+    return db.get_all_vacancies(user_id)
+
 # === API ДЛЯ КАНДИДАТОВ ===
 
 @app.post("/api/candidates")
