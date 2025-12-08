@@ -26,6 +26,8 @@ class Database:
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS profiles (
                 id TEXT PRIMARY KEY,
+                company_name TEXT,              -- Добавили
+                company_description TEXT,       -- Добавили
                 hh_client_id TEXT,
                 hh_employer_id TEXT,
                 hh_access_token TEXT,

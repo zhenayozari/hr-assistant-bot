@@ -38,6 +38,10 @@ async def dashboard_page():
 async def vacancies_page():
     return FileResponse("static/vacancies.html")
 
+@app.get("/settings")
+async def settings_page():
+    return FileResponse("static/settings.html")
+
 # CORS для Mini App
 app.add_middleware(
     CORSMiddleware,
