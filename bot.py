@@ -6,15 +6,21 @@ from telegram.ext import Application, CommandHandler, CallbackQueryHandler, Cont
 load_dotenv()
 
 TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
+WEBAPP_URL = os.getenv('WEBAPP_URL')  # <--- Добавили чтение ссылки
 
 # Команда /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Приветствие и главное меню"""
+    # Проверка на случай, если забыли добавить ссылку в .env
+    if not WEBAPP_URL:
+        print("❌ ОШИБКА: Не задан WEBAPP_URL в файле .env")
+        
     keyboard = [
-    [InlineKeyboardButton("🚀 Открыть HR Assistant", web_app=WebAppInfo(url="https://zhenayozari-hr-assistant-bot-9ea4.twc1.net/dashboard"))],
-    [InlineKeyboardButton("❓ Помощь", callback_data="help")],
-    [InlineKeyboardButton("⚙️ Настройки", callback_data="settings")],
-]
+        # <--- Тут теперь используется переменная вместо жесткой ссылки
+        [InlineKeyboardButton("🚀 Открыть HR Assistant", web_app=WebAppInfo(url=f"{WEBAPP_URL}/dashboard"))],
+        [InlineKeyboardButton("❓ Помощь", callback_data="help")],
+        [InlineKeyboardButton("⚙️ Настройки", callback_data="settings")],
+    ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     await update.message.reply_text(
