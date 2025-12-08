@@ -26,6 +26,9 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 @app.get("/test")
 async def test_page():
     return FileResponse("static/index.html")
+@app.get("/upload")
+async def upload_page():
+    return FileResponse("static/upload.html")
 
 # CORS для Mini App
 app.add_middleware(

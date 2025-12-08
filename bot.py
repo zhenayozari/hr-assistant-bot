@@ -12,9 +12,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Приветствие и главное меню"""
     keyboard = [
     [InlineKeyboardButton("🚀 Открыть HR Assistant", web_app=WebAppInfo(url="https://zhenayozari-hr-assistant-bot-9ea4.twc1.net/test"))],
+    [InlineKeyboardButton("📄 Загрузить резюме", web_app=WebAppInfo(url="https://zhenayozari-hr-assistant-bot-9ea4.twc1.net/upload"))],
     [InlineKeyboardButton("📊 Мои вакансии", callback_data="vacancies")],
     [InlineKeyboardButton("👥 Кандидаты", callback_data="candidates")],
-    [InlineKeyboardButton("⚙️ Настройки", callback_data="settings")],
 ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
