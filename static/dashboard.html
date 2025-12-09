@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Дашборд</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -11,9 +12,11 @@
             background: #0f172a;
             color: white;
             padding: 20px;
+            padding-bottom: 90px;
         }
         .header { margin-bottom: 30px; }
         h1 { font-size: 32px; margin-bottom: 10px; }
+        
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -29,52 +32,43 @@
         .stat-label { color: #94a3b8; font-size: 14px; margin-bottom: 10px; }
         .stat-value { font-size: 36px; font-weight: bold; }
         .stat-change { color: #10b981; font-size: 14px; margin-top: 10px; }
-        .chart-card {
+        
+        .vacancies-section {
             background: #1e293b;
             padding: 25px;
             border-radius: 15px;
             border: 1px solid #334155;
+            margin-bottom: 30px;
         }
-        .chart-title { font-size: 18px; margin-bottom: 20px; }
-        .bar-chart {
-            display: flex;
-            align-items: flex-end;
-            justify-content: space-between;
-            height: 200px;
-            gap: 10px;
+        .section-title { font-size: 20px; margin-bottom: 20px; }
+        
+        .vacancy-item {
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
         }
-        .bar {
-            flex: 1;
-            background: linear-gradient(to top, #3b82f6, #60a5fa);
-            border-radius: 8px 8px 0 0;
-            position: relative;
-            transition: all 0.3s;
-        }
-        .bar:hover { opacity: 0.8; transform: translateY(-5px); }
-        .bar-label {
-            text-align: center;
-            color: #94a3b8;
-            font-size: 12px;
-            margin-top: 10px;
-        }
+        .vacancy-item:hover { background: #1e293b; }
+        .vacancy-title { font-weight: 600; margin-bottom: 5px; }
+        .vacancy-stats { color: #94a3b8; font-size: 14px; }
+        
+        .empty { text-align: center; color: #64748b; padding: 40px; }
+        
         .bottom-nav {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
+            bottom: 0; left: 0; right: 0;
             background: #1e293b;
             border-top: 1px solid #334155;
             display: flex;
             justify-content: space-around;
-            padding: 15px;
+            padding: 10px 15px 20px 15px;
+            z-index: 1000;
         }
         .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: #64748b;
-            text-decoration: none;
-            font-size: 12px;
+            display: flex; flex-direction: column; align-items: center;
+            color: #64748b; text-decoration: none; font-size: 12px; width: 25%;
         }
         .nav-item.active { color: #3b82f6; }
         .nav-icon { font-size: 24px; margin-bottom: 5px; }
@@ -82,56 +76,28 @@
 </head>
 <body>
     <div class="header">
-        <h1>Дашборд</h1>
+        <h1>📊 Дашборд</h1>
     </div>
 
     <div class="stats">
         <div class="stat-card">
-            <div class="stat-label">Отклики за сегодня</div>
-            <div class="stat-value">11</div>
-            <div class="stat-change">+2 vs вчера</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Новые кандидаты</div>
-            <div class="stat-value" id="statCandidates">...</div>
-        </div>
-        <div class="stat-card">
             <div class="stat-label">Активные вакансии</div>
             <div class="stat-value" id="statVacancies">...</div>
         </div>
+        <div class="stat-card">
+            <div class="stat-label">Всего кандидатов</div>
+            <div class="stat-value" id="statCandidates">...</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Подходят</div>
+            <div class="stat-value" id="statSuitable">...</div>
+        </div>
     </div>
 
-    <div class="chart-card">
-        <div class="chart-title">Отклики за неделю</div>
-        <div class="bar-chart">
-            <div style="flex: 1;">
-                <div class="bar" style="height: 25%;"></div>
-                <div class="bar-label">Пн</div>
-            </div>
-            <div style="flex: 1;">
-                <div class="bar" style="height: 45%;"></div>
-                <div class="bar-label">Вт</div>
-            </div>
-            <div style="flex: 1;">
-                <div class="bar" style="height: 30%;"></div>
-                <div class="bar-label">Ср</div>
-            </div>
-            <div style="flex: 1;">
-                <div class="bar" style="height: 65%;"></div>
-                <div class="bar-label">Чт</div>
-            </div>
-            <div style="flex: 1;">
-                <div class="bar" style="height: 50%;"></div>
-                <div class="bar-label">Пт</div>
-            </div>
-            <div style="flex: 1;">
-                <div class="bar" style="height: 95%;"></div>
-                <div class="bar-label">Сб</div>
-            </div>
-            <div style="flex: 1;">
-                <div class="bar" style="height: 20%;"></div>
-                <div class="bar-label">Вс</div>
-            </div>
+    <div class="vacancies-section">
+        <div class="section-title">Ваши вакансии</div>
+        <div id="vacanciesList">
+            <div class="empty">Загрузка...</div>
         </div>
     </div>
 
@@ -154,30 +120,76 @@
         </a>
     </div>
 
-    <div style="height: 80px;"></div>
-
-<script>
+    <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
         const userId = tg.initDataUnsafe?.user?.id || 'test_user_123';
 
-        async function loadStats() {
+        async function loadDashboard() {
             try {
-                const res = await fetch(`/api/dashboard/stats/${userId}`);
-                const data = await res.json();
+                // Загружаем статистику
+                const statsRes = await fetch(`/api/dashboard/stats/${userId}`);
+                const stats = await statsRes.json();
                 
-                // Обновляем цифры на экране
-                document.getElementById('statCandidates').textContent = data.candidates;
-                document.getElementById('statVacancies').textContent = data.vacancies;
+                document.getElementById('statVacancies').textContent = stats.vacancies || 0;
+                document.getElementById('statCandidates').textContent = stats.candidates || 0;
+                document.getElementById('statSuitable').textContent = stats.suitable || 0;
+                
+                // Загружаем список вакансий
+                const vacRes = await fetch(`/api/vacancies/list/${userId}`);
+                const vacancies = await vacRes.json();
+                
+                const list = document.getElementById('vacanciesList');
+                
+                if (vacancies.length === 0) {
+                    list.innerHTML = '<div class="empty">Нет активных вакансий<br><a href="/vacancies" style="color: #3b82f6;">Создать первую вакансию</a></div>';
+                    return;
+                }
+                
+                // Для каждой вакансии считаем кандидатов
+                const items = await Promise.all(vacancies.map(async (v) => {
+                    try {
+                        const candRes = await fetch(`/api/candidates/list/${userId}/${v.id}`);
+                        const candidates = await candRes.json();
+                        
+                        const suitable = candidates.filter(c => {
+                            try {
+                                const analysis = typeof c.analysis_result === 'string' 
+                                    ? JSON.parse(c.analysis_result) 
+                                    : c.analysis_result;
+                                return analysis?.verdict === 'Подходит';
+                            } catch { return false; }
+                        }).length;
+                        
+                        return `
+                            <div class="vacancy-item" onclick="location.href='/vacancy-detail?id=${v.id}'">
+                                <div class="vacancy-title">${v.title}</div>
+                                <div class="vacancy-stats">
+                                    👥 ${candidates.length} кандидатов • 
+                                    ✅ ${suitable} подходит
+                                </div>
+                            </div>
+                        `;
+                    } catch {
+                        return `
+                            <div class="vacancy-item">
+                                <div class="vacancy-title">${v.title}</div>
+                                <div class="vacancy-stats">👥 0 кандидатов</div>
+                            </div>
+                        `;
+                    }
+                }));
+                
+                list.innerHTML = items.join('');
                 
             } catch (e) {
-                console.error('Ошибка загрузки статистики');
+                console.error('Ошибка загрузки дашборда:', e);
+                document.getElementById('vacanciesList').innerHTML = 
+                    '<div class="empty" style="color: #ef4444;">Ошибка загрузки данных</div>';
             }
         }
 
-        loadStats();
+        loadDashboard();
     </script>
-</body> 
-    
-
+</body>
 </html>

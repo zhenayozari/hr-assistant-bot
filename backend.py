@@ -209,6 +209,11 @@ async def get_all_vacancies(user_id: str):
     """Получить список всех вакансий"""
     return db.get_all_vacancies(user_id)
 
+@app.get("/api/candidates/list/{user_id}/{vacancy_id}")
+async def get_candidates_by_vacancy(user_id: str, vacancy_id: int):
+    """Получить кандидатов по вакансии"""
+    return db.get_all_candidates(user_id, vacancy_id)
+
 @app.get("/api/vacancies/{vacancy_id}/{user_id}")
 async def get_vacancy(vacancy_id: int, user_id: str):
     """Получить вакансию"""
