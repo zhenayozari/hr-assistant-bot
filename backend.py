@@ -294,19 +294,22 @@ async def upload_resume(
     if result.get("error"):
         raise HTTPException(status_code=400, detail=result["error"])
     
-    # Анализируем через AI
+     # Анализируем через AI
     analysis = analyze_resume(result["text"], "Оцени кандидата")
     
-    # === СОХРАНЕНИЕ В БАЗУ ===
+    # === ИСПРАВЛЕНИЕ ЗДЕСЬ ===
+    # Превращаем словарь в строку, чтобы SQLite не ругался
+    analysis_json = json.dumps(analysis, ensure_ascii=False)
+    
     import time
-    new_id = int(time.time()) # Генерируем ID на основе времени
+    new_id = int(time.time())
     
     db.save_candidate(
         candidate_id=new_id,
         user_id=user_id,
-        vacancy_id=0, # 0 = без привязки к вакансии (пока так)
-        full_name=result["filename"], # Пока имя файла вместо имени человека
-        analysis_result=analysis, # Сохраняем вердикт ИИ
+        vacancy_id=0,
+        full_name=result["filename"],
+        analysis_result=analysis_json,  # <--- Передаем строку, а не словарь!
         resume_url="local_file"
     )
     # =========================
