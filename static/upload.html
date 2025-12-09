@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Загрузить резюме</title>
+    <!-- ВАЖНО: Подключаем скрипт Telegram -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -12,7 +14,7 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
-            padding-bottom: 90px; /* Отступ под меню */
+            padding-bottom: 90px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -149,6 +151,20 @@
         const resultDiv = document.getElementById('result');
         let selectedFile = null;
 
+        // === БЕЗОПАСНОЕ ПОЛУЧЕНИЕ USER ID ===
+        let userId = 'test_user_123'; // Значение по умолчанию для браузера
+        
+        // Проверяем, есть ли Telegram
+        if (window.Telegram && window.Telegram.WebApp) {
+            const tg = window.Telegram.WebApp;
+            tg.expand();
+            // Если открыто внутри Телеграма, берем реальный ID
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                userId = tg.initDataUnsafe.user.id.toString();
+            }
+        }
+        // ====================================
+
         uploadArea.onclick = () => fileInput.click();
 
         fileInput.onchange = (e) => {
@@ -162,17 +178,13 @@
         uploadBtn.onclick = async () => {
             if (!selectedFile) return;
             
-            // Получаем ID и превращаем в строку
-            const tg = window.Telegram.WebApp;
-            const userId = String(tg.initDataUnsafe?.user?.id || 'test_user_123');
-
             uploadBtn.disabled = true;
             uploadBtn.textContent = 'Загрузка...';
             resultDiv.innerHTML = '<div class="result loading">🤖 Анализирую резюме через AI...</div>';
             
             const formData = new FormData();
             formData.append('file', selectedFile);
-            formData.append('user_id', userId); // Передаем ID
+            formData.append('user_id', userId); 
             
             try {
                 const res = await fetch(`${API_BASE}/api/upload_resume`, {
@@ -200,7 +212,7 @@
                     resultDiv.innerHTML = `<div class="result success">${JSON.stringify(data, null, 2)}</div>`;
                 }
             } catch (e) {
-                alert('Произошла ошибка: ' + e.message); // ПОКАЖЕТ ОШИБКУ НА ЭКРАНЕ
+                alert('Произошла ошибка: ' + e.message);
                 resultDiv.innerHTML = `<div class="result error">Ошибка: ${e.message}</div>`;
             } finally {
                 uploadBtn.disabled = false;
