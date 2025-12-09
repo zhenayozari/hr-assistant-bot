@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Детали вакансии</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a;
+            color: white;
+            padding: 20px;
+            padding-bottom: 90px;
+        }
+        .header {
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .back-btn {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+        }
+        h1 { font-size: 24px; }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .stat-box {
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid #334155;
+        }
+        .stat-value { font-size: 28px; font-weight: bold; margin-bottom: 5px; }
+        .stat-label { font-size: 13px; color: #94a3b8; }
+        
+        .section {
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border: 1px solid #334155;
+        }
+        .section-title { 
+            font-size: 18px; 
+            font-weight: 600; 
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .candidate-card {
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border-left: 4px solid #64748b;
+        }
+        .candidate-card.suitable { border-left-color: #10b981; }
+        .candidate-card.unsuitable { border-left-color: #ef4444; }
+        
+        .candidate-name { 
+            font-weight: 600; 
+            margin-bottom: 5px;
+            font-size: 16px;
+        }
+        .candidate-verdict { 
+            font-size: 14px; 
+            margin-bottom: 8px;
+        }
+        .candidate-verdict.suitable { color: #10b981; }
+        .candidate-verdict.unsuitable { color: #ef4444; }
+        
+        .candidate-reason { 
+            color: #94a3b8; 
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+        .candidate-matches {
+            color: #64748b;
+            font-size: 12px;
+        }
+        
+        .empty { 
+            text-align: center; 
+            color: #64748b; 
+            padding: 30px;
+            font-size: 14px;
+        }
+        
+        .bottom-nav {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: #1e293b;
+            border-top: 1px solid #334155;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 15px 20px 15px;
+            z-index: 1000;
+        }
+        .nav-item {
+            display: flex; flex-direction: column; align-items: center;
+            color: #64748b; text-decoration: none; font-size: 12px; width: 25%;
+        }
+        .nav-item.active { color: #3b82f6; }
+        .nav-icon { font-size: 24px; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="back-btn" onclick="history.back()">←</div>
+        <div>
+            <h1 id="vacancyTitle">Загрузка...</h1>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-box">
+            <div class="stat-value" id="totalCandidates">0</div>
+            <div class="stat-label">Всего</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value" style="color: #10b981;" id="suitableCandidates">0</div>
+            <div class="stat-label">Подходят</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value" style="color: #ef4444;" id="unsuitableCandidates">0</div>
+            <div class="stat-label">Не подходят</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">✅ Подходящие кандидаты</div>
+        <div id="suitableList">
+            <div class="empty">Загрузка...</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">❌ Не подходящие кандидаты</div>
+        <div id="unsuitableList">
+            <div class="empty">Загрузка...</div>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <a href="/dashboard" class="nav-item">
+            <div class="nav-icon">📊</div>
+            Дашборд
+        </a>
+        <a href="/vacancies" class="nav-item">
+            <div class="nav-icon">📋</div>
+            Вакансии
+        </a>
+        <a href="/upload" class="nav-item">
+            <div class="nav-icon">📄</div>
+            Анализ
+        </a>
+        <a href="/settings" class="nav-item">
+            <div class="nav-icon">⚙️</div>
+            Настройки
+        </a>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        const userId = tg.initDataUnsafe?.user?.id || 'test_user_123';
+        
+        // Получаем ID вакансии из URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const vacancyId = urlParams.get('id');
+
+        async function loadVacancyDetails() {
+            if (!vacancyId) {
+                alert('ID вакансии не указан');
+                history.back();
+                return;
+            }
+
+            try {
+                // Загружаем вакансию
+                const vacRes = await fetch(`/api/vacancies/${vacancyId}/${userId}`);
+                const vacancy = await vacRes.json();
+                document.getElementById('vacancyTitle').textContent = vacancy.title;
+
+                // Загружаем кандидатов
+                const candRes = await fetch(`/api/candidates/list/${userId}/${vacancyId}`);
+                const candidates = await candRes.json();
+
+                // Разделяем на подходящих и неподходящих
+                const suitable = [];
+                const unsuitable = [];
+
+                candidates.forEach(c => {
+                    let analysis = null;
+                    try {
+                        analysis = typeof c.analysis_result === 'string' 
+                            ? JSON.parse(c.analysis_result) 
+                            : c.analysis_result;
+                    } catch (e) {
+                        console.error('Ошибка парсинга анализа:', e);
+                    }
+
+                    if (analysis?.verdict === 'Подходит') {
+                        suitable.push({ ...c, analysis });
+                    } else {
+                        unsuitable.push({ ...c, analysis });
+                    }
+                });
+
+                // Обновляем статистику
+                document.getElementById('totalCandidates').textContent = candidates.length;
+                document.getElementById('suitableCandidates').textContent = suitable.length;
+                document.getElementById('unsuitableCandidates').textContent = unsuitable.length;
+
+                // Отображаем списки
+                renderCandidates('suitableList', suitable, true);
+                renderCandidates('unsuitableList', unsuitable, false);
+
+            } catch (e) {
+                console.error('Ошибка загрузки:', e);
+                alert('Ошибка загрузки данных');
+            }
+        }
+
+        function renderCandidates(containerId, candidates, isSuitable) {
+            const container = document.getElementById(containerId);
+            
+            if (candidates.length === 0) {
+                container.innerHTML = '<div class="empty">Нет кандидатов</div>';
+                return;
+            }
+
+            container.innerHTML = candidates.map(c => {
+                const analysis = c.analysis || {};
+                const matchText = analysis.matches_count 
+                    ? `Совпадений: ${analysis.matches_count} критериев` 
+                    : '';
+                
+                return `
+                    <div class="candidate-card ${isSuitable ? 'suitable' : 'unsuitable'}">
+                        <div class="candidate-name">${c.full_name || 'Без имени'}</div>
+                        <div class="candidate-verdict ${isSuitable ? 'suitable' : 'unsuitable'}">
+                            ${isSuitable ? '✅' : '❌'} ${analysis.verdict || 'Не определено'}
+                        </div>
+                        <div class="candidate-reason">${analysis.reason || 'Нет описания'}</div>
+                        ${matchText ? `<div class="candidate-matches">${matchText}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        loadVacancyDetails();
+    </script>
+</body>
+</html>

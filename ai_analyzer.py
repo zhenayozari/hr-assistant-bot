@@ -45,29 +45,35 @@ def format_resume_for_analysis(full_resume: Dict[str, Any]) -> str:
 
 def analyze_resume(resume_text: str, criteria: str = None) -> Dict[str, Any]:
     """
-    Анализирует резюме через OpenAI
+    Анализирует резюме через OpenAI С ПОДСЧЁТОМ СОВПАДЕНИЙ
     
     Args:
         resume_text: Текст резюме
         criteria: Критерии оценки (опционально)
     
     Returns:
-        Dict с verdict, reason
+        Dict с verdict, reason, matches_count, matched_criteria
     """
     
     if not criteria:
         criteria = "Оцени кандидата на адекватность и соответствие стандартным требованиям."
     
-    prompt = f"""Проанализируй резюме кандидата по следующим критериям:
+    prompt = f"""Ты HR-эксперт. Анализируй СТРОГО по критериям.
+
+ПРАВИЛО: Из всех критериев должно совпадать НЕ МЕНЕЕ 3. Иначе — "Не подходит".
+
+Критерии вакансии:
 {criteria}
 
-Резюме:
+Резюме кандидата:
 {resume_text}
 
-Выдай свой вердикт в формате JSON:
+Верни СТРОГО JSON:
 {{
     "verdict": "Подходит" или "Не подходит",
-    "reason": "Краткая причина (1-2 предложения)"
+    "reason": "Одно короткое предложение (главный аргумент)",
+    "matches_count": число_совпавших_критериев,
+    "matched_criteria": ["критерий 1", "критерий 2", ...]
 }}
 
 Важно: Отвечай ТОЛЬКО JSON, без дополнительного текста."""
@@ -76,7 +82,7 @@ def analyze_resume(resume_text: str, criteria: str = None) -> Dict[str, Any]:
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "Ты HR-аналитик. Отвечай только валидным JSON."},
+                {"role": "system", "content": "Ты HR-эксперт. Отвечай только валидным JSON."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.0,
@@ -86,16 +92,28 @@ def analyze_resume(resume_text: str, criteria: str = None) -> Dict[str, Any]:
         result_text = response.choices[0].message.content
         result = json.loads(result_text)
         
+        # Проверка минимум 3 совпадения
+        matches = result.get("matches_count", 0)
+        if matches < 3 and result.get("verdict") == "Подходит":
+            result["verdict"] = "Не подходит"
+            result["reason"] = f"Недостаточно совпадений критериев ({matches}/3 минимум)"
+        
         return {
             "status": "success",
             "verdict": result.get("verdict", "Не определено"),
-            "reason": result.get("reason", "")
+            "reason": result.get("reason", ""),
+            "matches_count": matches,
+            "matched_criteria": result.get("matched_criteria", [])
         }
         
     except Exception as e:
         return {
             "status": "error",
-            "error": str(e)
+            "error": str(e),
+            "verdict": "Ошибка",
+            "reason": str(e),
+            "matches_count": 0,
+            "matched_criteria": []
         }
 
 def analyze_resume_from_hh(full_resume: Dict[str, Any], criteria: str = None) -> Dict[str, Any]:
@@ -112,50 +130,9 @@ def analyze_resume_from_hh(full_resume: Dict[str, Any], criteria: str = None) ->
     resume_text = format_resume_for_analysis(full_resume)
     return analyze_resume(resume_text, criteria)
 
-def generate_vacancy_profile(title: str) -> Dict[str, Any]:
-    """
-    Генерирует профиль вакансии по названию через OpenAI
-    """
-    prompt = f"""
-    Я HR-менеджер. Я хочу открыть вакансию: "{title}".
-    Составь мне профиль этой вакансии для поиска кандидата.
-    
-    Верни СТРОГО JSON (без лишнего текста):
-    {{
-        "hard_skills": "список ключевых технических навыков через запятую",
-        "soft_skills": "список мягких навыков через запятую",
-        "experience": "требуемый опыт (например: от 1 до 3 лет)",
-        "description": "краткое привлекательное описание вакансии (2-3 предложения)",
-        "criteria": "критерии для ИИ, который будет оценивать резюме (на что смотреть в первую очередь)"
-    }}
-    """
-
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "Ты опытный IT-рекрутер."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.7,
-            response_format={"type": "json_object"}
-        )
-        
-        result_text = response.choices[0].message.content
-        return json.loads(result_text)
-        
-    except Exception as e:
-        return {
-            "error": str(e),
-            "hard_skills": "",
-            "soft_skills": "",
-            "description": "Ошибка генерации",
-            "criteria": ""
-        }
-
 def generate_vacancy_profile(vacancy_title: str) -> Dict[str, Any]:
     """
-    Генерирует профиль вакансии (как в App Script: hard/soft skills, критерии)
+    Генерирует профиль вакансии (hard/soft skills, критерии)
     
     Args:
         vacancy_title: Название вакансии (например "Python Developer")
@@ -209,8 +186,6 @@ def generate_vacancy_profile(vacancy_title: str) -> Dict[str, Any]:
             "description": "",
             "criteria": ""
         }
-
-
 
 # Экспорт функций
 __all__ = ['analyze_resume', 'analyze_resume_from_hh', 'format_resume_for_analysis', 'generate_vacancy_profile']

@@ -42,6 +42,15 @@ async def vacancies_page():
 async def settings_page():
     return FileResponse("static/settings.html")
 
+@app.get("/vacancy-detail")
+async def vacancy_detail_page():
+    return FileResponse("static/vacancy-detail.html")
+
+@app.get("/api/candidates/list/{user_id}/{vacancy_id}")
+async def get_candidates_by_vacancy(user_id: str, vacancy_id: int):
+    """Получить кандидатов по вакансии"""
+    return db.get_all_candidates(user_id, vacancy_id)
+
 # CORS для Mini App
 app.add_middleware(
     CORSMiddleware,
@@ -287,7 +296,7 @@ async def analyze_candidate(request: Request):
 async def upload_resume(
     file: UploadFile = File(...), 
     user_id: str = Form(...),
-    vacancy_id: str = Form(...)  # <--- ДОБАВИЛИ!
+    vacancy_id: str = Form(...)
 ):
     """Загрузить, распарсить и СОХРАНИТЬ резюме С ПРИВЯЗКОЙ К ВАКАНСИИ"""
     
@@ -319,7 +328,7 @@ async def upload_resume(
     db.save_candidate(
         candidate_id=new_id,
         user_id=user_id,
-        vacancy_id=int(vacancy_id),  # <--- ПРИВЯЗКА!
+        vacancy_id=int(vacancy_id),
         full_name=result["filename"],
         analysis_result=analysis_json,
         resume_url="local_file"

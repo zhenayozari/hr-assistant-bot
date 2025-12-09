@@ -1,5 +1,5 @@
 import sqlite3
-import json  
+import json
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 
@@ -27,8 +27,6 @@ class Database:
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS profiles (
                 id TEXT PRIMARY KEY,
-                company_name TEXT,              -- Добавили
-                company_description TEXT,       -- Добавили
                 hh_client_id TEXT,
                 hh_employer_id TEXT,
                 hh_access_token TEXT,
@@ -132,18 +130,6 @@ class Database:
         conn.commit()
         conn.close()
     
-    def get_all_vacancies(self, user_id: str) -> List[Dict[str, Any]]:
-        """Получить все вакансии пользователя"""
-        conn = self.get_connection()
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT * FROM vacancies WHERE user_id = ? ORDER BY created_at DESC",
-            (user_id,)
-        )
-        rows = cursor.fetchall()
-        conn.close()
-        return [dict(row) for row in rows]
-
     def get_vacancy(self, vacancy_id: int, user_id: str) -> Optional[Dict[str, Any]]:
         """Получить вакансию"""
         conn = self.get_connection()
@@ -167,7 +153,7 @@ class Database:
         rows = cursor.fetchall()
         conn.close()
         return [dict(row) for row in rows]
-
+    
     # === КАНДИДАТЫ ===
     
     def save_candidate(self, candidate_id: int, user_id: str, vacancy_id: int, 
@@ -196,45 +182,6 @@ class Database:
         row = cursor.fetchone()
         conn.close()
         return dict(row) if row else None
-
-    # ... (код метода get_candidate) ...
-        return dict(row) if row else None
-
-    # === НОВЫЙ МЕТОД СЮДА ===
-    def get_dashboard_stats(self, user_id: str) -> Dict[str, int]:
-        """Получить статистику для дашборда"""
-        conn = self.get_connection()
-        cursor = conn.cursor()
-        
-        # Считаем вакансии
-        cursor.execute("SELECT COUNT(*) FROM vacancies WHERE user_id = ?", (user_id,))
-        vacancies_count = cursor.fetchone()[0]
-        
-        # Считаем кандидатов
-        cursor.execute("SELECT COUNT(*) FROM candidates WHERE user_id = ?", (user_id,))
-        candidates_count = cursor.fetchone()[0]
-        
-        conn.close()
-        return {
-            "vacancies": vacancies_count,
-            "candidates": candidates_count,
-            "today": 0 # Пока заглушка для "сегодня"
-        }
-    # ========================
-
-# === РАСШИРЕННЫЕ МЕТОДЫ ===
-    
-    def get_all_vacancies(self, user_id: str) -> List[Dict[str, Any]]:
-        """Получить все вакансии пользователя"""
-        conn = self.get_connection()
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT * FROM vacancies WHERE user_id = ? ORDER BY created_at DESC",
-            (user_id,)
-        )
-        rows = cursor.fetchall()
-        conn.close()
-        return [dict(row) for row in rows]
     
     def get_all_candidates(self, user_id: str, vacancy_id: int = None) -> List[Dict[str, Any]]:
         """Получить всех кандидатов (опционально по вакансии)"""
@@ -281,12 +228,24 @@ class Database:
         cursor.execute("SELECT COUNT(*) FROM candidates WHERE user_id = ?", (user_id,))
         cand_count = cursor.fetchone()[0]
         
+        # Подходящие кандидаты (подсчёт из JSON)
+        cursor.execute("SELECT analysis_result FROM candidates WHERE user_id = ?", (user_id,))
+        rows = cursor.fetchall()
+        suitable_count = 0
+        for row in rows:
+            try:
+                analysis = json.loads(row[0]) if row[0] else {}
+                if analysis.get('verdict') == 'Подходит':
+                    suitable_count += 1
+            except:
+                pass
+        
         conn.close()
         
         return {
             "vacancies": vac_count,
             "candidates": cand_count,
-            "suitable": 0  # TODO: считать из analysis_result
+            "suitable": suitable_count
         }
 
 # Создаём глобальный экземпляр

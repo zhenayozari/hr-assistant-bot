@@ -162,7 +162,8 @@
                         }).length;
                         
                         return `
-                            <div class="vacancy-item" onclick="location.href='/vacancy-detail?id=${v.id}'">
+                            <a href="/vacancy-detail?id=${v.id}" style="text-decoration: none; color: inherit;">
+    <div class="vacancy-item">
                                 <div class="vacancy-title">${v.title}</div>
                                 <div class="vacancy-stats">
                                     👥 ${candidates.length} кандидатов • 
