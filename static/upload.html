@@ -142,7 +142,7 @@
     </div>
 
     <script>
-        const API_BASE = ''; // Относительный путь
+        const API_BASE = ''; 
         const uploadArea = document.getElementById('uploadArea');
         const fileInput = document.getElementById('fileInput');
         const uploadBtn = document.getElementById('uploadBtn');
@@ -159,40 +159,32 @@
             }
         };
 
-        // Drag & Drop
-        uploadArea.ondragover = (e) => { e.preventDefault(); uploadArea.classList.add('dragging'); };
-        uploadArea.ondragleave = () => uploadArea.classList.remove('dragging');
-        uploadArea.ondrop = (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('dragging');
-            selectedFile = e.dataTransfer.files[0];
-            if (selectedFile) {
-                uploadArea.innerHTML = `<p style="font-size: 48px;">✅</p><p style="color: #10b981; font-weight: 600;">${selectedFile.name}</p>`;
-                uploadBtn.disabled = false;
-            }
-        };
-
         uploadBtn.onclick = async () => {
             if (!selectedFile) return;
             
-            // Получаем ID пользователя (добавь эту строку)
+            // Получаем ID и превращаем в строку
             const tg = window.Telegram.WebApp;
-            const userId = tg.initDataUnsafe?.user?.id || 'test_user_123';
+            const userId = String(tg.initDataUnsafe?.user?.id || 'test_user_123');
 
             uploadBtn.disabled = true;
+            uploadBtn.textContent = 'Загрузка...';
             resultDiv.innerHTML = '<div class="result loading">🤖 Анализирую резюме через AI...</div>';
             
             const formData = new FormData();
             formData.append('file', selectedFile);
-            formData.append('user_id', userId); // <--- ДОБАВИЛИ ЭТУ СТРОКУ
+            formData.append('user_id', userId); // Передаем ID
             
             try {
-                // ... (дальше код без изменений)
                 const res = await fetch(`${API_BASE}/api/upload_resume`, {
                     method: 'POST',
                     body: formData
                 });
                 
+                if (!res.ok) {
+                    const errText = await res.text();
+                    throw new Error(`Ошибка сервера (${res.status}): ${errText}`);
+                }
+
                 const data = await res.json();
                 
                 if (data.analysis && data.analysis.verdict) {
@@ -208,9 +200,11 @@
                     resultDiv.innerHTML = `<div class="result success">${JSON.stringify(data, null, 2)}</div>`;
                 }
             } catch (e) {
+                alert('Произошла ошибка: ' + e.message); // ПОКАЖЕТ ОШИБКУ НА ЭКРАНЕ
                 resultDiv.innerHTML = `<div class="result error">Ошибка: ${e.message}</div>`;
             } finally {
                 uploadBtn.disabled = false;
+                uploadBtn.textContent = 'Загрузить и анализировать';
             }
         };
     </script>
