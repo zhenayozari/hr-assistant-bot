@@ -281,9 +281,10 @@ async def analyze_candidate(request: Request):
 @app.post("/api/upload_resume")
 async def upload_resume(
     file: UploadFile = File(...), 
-    user_id: str = Form(...)  # <--- Теперь мы требуем ID пользователя
+    user_id: str = Form(...),
+    vacancy_id: str = Form(...)  # <--- ДОБАВИЛИ!
 ):
-    """Загрузить, распарсить и СОХРАНИТЬ резюме"""
+    """Загрузить, распарсить и СОХРАНИТЬ резюме С ПРИВЯЗКОЙ К ВАКАНСИИ"""
     
     # Читаем файл
     content = await file.read()
@@ -294,11 +295,17 @@ async def upload_resume(
     if result.get("error"):
         raise HTTPException(status_code=400, detail=result["error"])
     
-     # Анализируем через AI
-    analysis = analyze_resume(result["text"], "Оцени кандидата")
+    # Получаем вакансию и её критерии
+    vacancy = db.get_vacancy(int(vacancy_id), user_id)
+    if not vacancy:
+        raise HTTPException(status_code=404, detail="Вакансия не найдена")
     
-    # === ИСПРАВЛЕНИЕ ЗДЕСЬ ===
-    # Превращаем словарь в строку, чтобы SQLite не ругался
+    criteria = vacancy.get('pro_talk_criteria') or 'Оцени кандидата'
+    
+    # Анализируем ПО КРИТЕРИЯМ ВАКАНСИИ
+    analysis = analyze_resume(result["text"], criteria)
+    
+    # Сохраняем в БД
     analysis_json = json.dumps(analysis, ensure_ascii=False)
     
     import time
@@ -307,12 +314,11 @@ async def upload_resume(
     db.save_candidate(
         candidate_id=new_id,
         user_id=user_id,
-        vacancy_id=0,
+        vacancy_id=int(vacancy_id),  # <--- ПРИВЯЗКА!
         full_name=result["filename"],
-        analysis_result=analysis_json,  # <--- Передаем строку, а не словарь!
+        analysis_result=analysis_json,
         resume_url="local_file"
     )
-    # =========================
     
     return {
         "filename": result["filename"],

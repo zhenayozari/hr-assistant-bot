@@ -153,5 +153,64 @@ def generate_vacancy_profile(title: str) -> Dict[str, Any]:
             "criteria": ""
         }
 
+def generate_vacancy_profile(vacancy_title: str) -> Dict[str, Any]:
+    """
+    Генерирует профиль вакансии (как в App Script: hard/soft skills, критерии)
+    
+    Args:
+        vacancy_title: Название вакансии (например "Python Developer")
+    
+    Returns:
+        Dict с hard_skills, soft_skills, criteria, description
+    """
+    
+    prompt = f"""Ты HR-эксперт. Создай профиль вакансии по названию должности.
+
+Вакансия: {vacancy_title}
+
+Верни СТРОГО JSON:
+{{
+    "hard_skills": "Python, FastAPI, PostgreSQL, Docker, Git",
+    "soft_skills": "Коммуникабельность, Ответственность, Умение работать в команде",
+    "description": "2-3 предложения о роли и обязанностях",
+    "criteria": "Обязательно: опыт 3+ года, знание FastAPI и PostgreSQL. Желательно: опыт с Docker"
+}}
+
+Важно: hard_skills через запятую (до 10 штук), soft_skills через запятую (до 5 штук), criteria — конкретные требования для AI-анализа."""
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "Ты HR-эксперт. Отвечай только валидным JSON."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3,
+            response_format={"type": "json_object"}
+        )
+        
+        result_text = response.choices[0].message.content
+        result = json.loads(result_text)
+        
+        return {
+            "status": "success",
+            "hard_skills": result.get("hard_skills", ""),
+            "soft_skills": result.get("soft_skills", ""),
+            "description": result.get("description", ""),
+            "criteria": result.get("criteria", "")
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e),
+            "hard_skills": "",
+            "soft_skills": "",
+            "description": "",
+            "criteria": ""
+        }
+
+
+
 # Экспорт функций
 __all__ = ['analyze_resume', 'analyze_resume_from_hh', 'format_resume_for_analysis', 'generate_vacancy_profile']

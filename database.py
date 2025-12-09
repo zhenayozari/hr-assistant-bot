@@ -1,4 +1,5 @@
 import sqlite3
+import json  
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 
@@ -220,6 +221,73 @@ class Database:
             "today": 0 # Пока заглушка для "сегодня"
         }
     # ========================
+
+# === РАСШИРЕННЫЕ МЕТОДЫ ===
+    
+    def get_all_vacancies(self, user_id: str) -> List[Dict[str, Any]]:
+        """Получить все вакансии пользователя"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT * FROM vacancies WHERE user_id = ? ORDER BY created_at DESC",
+            (user_id,)
+        )
+        rows = cursor.fetchall()
+        conn.close()
+        return [dict(row) for row in rows]
+    
+    def get_all_candidates(self, user_id: str, vacancy_id: int = None) -> List[Dict[str, Any]]:
+        """Получить всех кандидатов (опционально по вакансии)"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        if vacancy_id:
+            cursor.execute(
+                "SELECT * FROM candidates WHERE user_id = ? AND vacancy_id = ? ORDER BY created_at DESC",
+                (user_id, vacancy_id)
+            )
+        else:
+            cursor.execute(
+                "SELECT * FROM candidates WHERE user_id = ? ORDER BY created_at DESC",
+                (user_id,)
+            )
+        
+        rows = cursor.fetchall()
+        conn.close()
+        
+        result = []
+        for row in rows:
+            r = dict(row)
+            # Преобразуем analysis_result обратно в объект
+            if r.get('analysis_result'):
+                try:
+                    r['analysis_result'] = json.loads(r['analysis_result'])
+                except:
+                    pass
+            result.append(r)
+        
+        return result
+    
+    def get_dashboard_stats(self, user_id: str) -> Dict[str, Any]:
+        """Статистика для дашборда"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        # Количество вакансий
+        cursor.execute("SELECT COUNT(*) FROM vacancies WHERE user_id = ?", (user_id,))
+        vac_count = cursor.fetchone()[0]
+        
+        # Количество кандидатов
+        cursor.execute("SELECT COUNT(*) FROM candidates WHERE user_id = ?", (user_id,))
+        cand_count = cursor.fetchone()[0]
+        
+        conn.close()
+        
+        return {
+            "vacancies": vac_count,
+            "candidates": cand_count,
+            "suitable": 0  # TODO: считать из analysis_result
+        }
 
 # Создаём глобальный экземпляр
 db = Database()
