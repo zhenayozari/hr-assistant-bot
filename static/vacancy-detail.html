@@ -243,31 +243,79 @@
         }
 
         function renderCandidates(containerId, candidates, isSuitable) {
-            const container = document.getElementById(containerId);
-            
-            if (candidates.length === 0) {
-                container.innerHTML = '<div class="empty">Нет кандидатов</div>';
-                return;
-            }
+    const container = document.getElementById(containerId);
+    
+    if (candidates.length === 0) {
+        container.innerHTML = '<div class="empty">Нет кандидатов</div>';
+        return;
+    }
 
-            container.innerHTML = candidates.map(c => {
-                const analysis = c.analysis || {};
-                const matchText = analysis.matches_count 
-                    ? `Совпадений: ${analysis.matches_count} критериев` 
-                    : '';
-                
-                return `
-                    <div class="candidate-card ${isSuitable ? 'suitable' : 'unsuitable'}">
-                        <div class="candidate-name">${c.full_name || 'Без имени'}</div>
-                        <div class="candidate-verdict ${isSuitable ? 'suitable' : 'unsuitable'}">
-                            ${isSuitable ? '✅' : '❌'} ${analysis.verdict || 'Не определено'}
-                        </div>
-                        <div class="candidate-reason">${analysis.reason || 'Нет описания'}</div>
-                        ${matchText ? `<div class="candidate-matches">${matchText}</div>` : ''}
-                    </div>
-                `;
-            }).join('');
+    container.innerHTML = candidates.map(c => {
+        const analysis = c.analysis || {};
+        const matchText = analysis.matches_count 
+            ? `Совпадений: ${analysis.matches_count} критериев` 
+            : '';
+        
+        const emailButton = isSuitable ? `
+            <button 
+                onclick="sendEmail('${c.email || ''}', '${c.full_name || ''}')" 
+                style="margin-top: 10px; padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;"
+            >
+                📧 Отправить письмо
+            </button>
+        ` : '';
+        
+        return `
+            <div class="candidate-card ${isSuitable ? 'suitable' : 'unsuitable'}">
+                <div class="candidate-name">${c.full_name || 'Без имени'}</div>
+                <div class="candidate-verdict ${isSuitable ? 'suitable' : 'unsuitable'}">
+                    ${isSuitable ? '✅' : '❌'} ${analysis.verdict || 'Не определено'}
+                </div>
+                <div class="candidate-reason">${analysis.reason || 'Нет описания'}</div>
+                ${matchText ? `<div class="candidate-matches">${matchText}</div>` : ''}
+                ${emailButton}
+            </div>
+        `;
+    }).join('');
+}
+
+async function sendEmail(email, name) {
+    if (!email) {
+        alert('У кандидата нет email');
+        return;
+    }
+    
+    const subject = prompt('Тема письма:', `Тестовое задание`);
+    if (!subject) return;
+    
+    const body = prompt('Текст письма:', 
+        `Здравствуйте, ${name}!\n\nБлагодарим за отклик на нашу вакансию.\n\nС уважением,\nHR-команда`
+    );
+    if (!body) return;
+    
+    try {
+        const res = await fetch('/api/send_email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user_id: userId,
+                to_email: email,
+                subject: subject,
+                body: body
+            })
+        });
+        
+        const result = await res.json();
+        
+        if (result.status === 'success') {
+            alert('✅ Письмо отправлено!');
+        } else {
+            alert('❌ Ошибка: ' + (result.message || 'Неизвестная ошибка'));
         }
+    } catch (e) {
+        alert('❌ Ошибка отправки: ' + e.message);
+    }
+}
 
         loadVacancyDetails();
     </script>

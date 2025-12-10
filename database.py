@@ -25,17 +25,27 @@ class Database:
         
         # Таблица: Профили пользователей
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS profiles (
-                id TEXT PRIMARY KEY,
-                hh_client_id TEXT,
-                hh_employer_id TEXT,
-                hh_access_token TEXT,
-                hh_refresh_token TEXT,
-                telegram_chat_ids TEXT,
-                is_paid INTEGER DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
+    CREATE TABLE IF NOT EXISTS profiles (
+        id TEXT PRIMARY KEY,
+        hh_client_id TEXT,
+        hh_employer_id TEXT,
+        hh_access_token TEXT,
+        hh_refresh_token TEXT,
+        telegram_chat_ids TEXT,
+        is_paid INTEGER DEFAULT 0,
+        company_name TEXT,
+        company_description TEXT,
+        
+        -- НОВЫЕ ПОЛЯ ДЛЯ ПОЧТЫ
+        email_provider TEXT,
+        email_address TEXT,
+        email_access_token TEXT,
+        email_refresh_token TEXT,
+        email_token_expiry TEXT,
+        
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+''')
         
         # Таблица: Вакансии
         cursor.execute('''

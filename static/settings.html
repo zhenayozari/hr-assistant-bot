@@ -6,14 +6,14 @@
     <title>Настройки компании</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; } /* Исправляет скачки размеров */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #0f172a;
             color: white;
             padding: 20px;
-            padding-bottom: 90px; /* Отступ, чтобы меню не закрывало контент */
+            padding-bottom: 90px;
         }
         .container { max-width: 600px; margin: 0 auto; }
         h1 { margin-bottom: 20px; font-size: 28px; }
@@ -36,7 +36,7 @@
             border-radius: 8px;
             color: white;
             margin-bottom: 15px;
-            font-size: 16px; /* Чтобы на айфоне не приближало */
+            font-size: 16px;
         }
         
         input:focus, textarea:focus {
@@ -62,7 +62,6 @@
         .success { color: #10b981; }
         .error { color: #ef4444; }
 
-        /* Нижнее меню */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -72,7 +71,7 @@
             border-top: 1px solid #334155;
             display: flex;
             justify-content: space-around;
-            padding: 10px 15px 20px 15px; /* Чуть больше отступ снизу для iPhone */
+            padding: 10px 15px 20px 15px;
             z-index: 1000;
         }
         .nav-item {
@@ -114,11 +113,35 @@
             <input type="text" id="hhEmployerId" placeholder="Цифры из ссылки на компанию">
         </div>
 
+        <!-- Интеграция почты -->
+        <div class="card">
+            <h3>📧 Подключение рабочей почты</h3>
+            <p style="font-size: 12px; color: #64748b; margin-bottom: 15px;">
+                Подключите почту для автоматической отправки писем кандидатам
+            </p>
+            
+            <div id="emailStatus" style="margin-bottom: 15px; padding: 10px; border-radius: 8px; background: #0f172a;">
+                <span style="color: #94a3b8;">Статус: </span>
+                <span id="emailStatusText">Не подключена</span>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                <button onclick="connectEmail('google')" style="background: #4285f4; padding: 10px; border: none; border-radius: 8px; color: white; cursor: pointer;">
+                    Gmail
+                </button>
+                <button onclick="connectEmail('yandex')" style="background: #fc3f1d; padding: 10px; border: none; border-radius: 8px; color: white; cursor: pointer;">
+                    Яндекс
+                </button>
+                <button onclick="connectEmail('mailru')" style="background: #005ff9; padding: 10px; border: none; border-radius: 8px; color: white; cursor: pointer;">
+                    Mail.ru
+                </button>
+            </div>
+        </div>
+
         <button class="save-btn" onclick="saveSettings()">Сохранить настройки</button>
         <div id="status" class="status"></div>
     </div>
 
-    <!-- Нижнее меню -->
     <div class="bottom-nav">
         <a href="/dashboard" class="nav-item">
             <div class="nav-icon">📊</div>
@@ -141,8 +164,6 @@
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-
-        // Получаем ID пользователя из Telegram
         const userId = tg.initDataUnsafe?.user?.id || 'test_user_123';
 
         // Загрузка текущих данных
@@ -200,7 +221,38 @@
             }
         }
 
+        // Проверка статуса подключения почты
+        async function checkEmailStatus() {
+            try {
+                const res = await fetch(`/api/profile/${userId}`);
+                const profile = await res.json();
+                
+                if (profile.email_address) {
+                    document.getElementById('emailStatusText').innerHTML = 
+                        `✅ ${profile.email_address} (${profile.email_provider})`;
+                    document.getElementById('emailStatus').style.background = '#064e3b';
+                }
+            } catch (e) {
+                console.error('Ошибка проверки почты:', e);
+            }
+        }
+        
+        // Подключение почты
+        function connectEmail(provider) {
+            window.location.href = `/oauth/${provider}/start?state=${userId}`;
+        }
+        
+        // Проверяем успех подключения (из URL параметров)
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('success') === 'true') {
+            alert('✅ Почта успешно подключена!');
+            checkEmailStatus();
+        } else if (urlParams.get('error')) {
+            alert('❌ Ошибка: ' + urlParams.get('error'));
+        }
+        
         loadData();
+        checkEmailStatus();
     </script>
 </body>
 </html>

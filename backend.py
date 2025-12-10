@@ -4,6 +4,9 @@ from dotenv import load_dotenv
 # СНАЧАЛА загружаем .env
 load_dotenv()
 
+# КОНСТАНТЫ
+BACKEND_URL = os.getenv('WEBAPP_URL', 'https://zhenayozari-hr-assistant-bot-9ea4.twc1.net')
+
 # ПОТОМ импортируем остальное
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
@@ -15,7 +18,8 @@ from database import db
 from ai_analyzer import analyze_resume_from_hh, analyze_resume, generate_vacancy_profile
 from file_parser import parse_resume_file
 from fastapi import UploadFile, File, Form
-
+from email_service import get_oauth_url, exchange_code_for_token, get_user_email, send_email_via_oauth
+from fastapi.responses import RedirectResponse
 
 app = FastAPI()
 
@@ -349,3 +353,83 @@ if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
+
+# === OAUTH ENDPOINTS ===
+
+@app.get("/oauth/{provider}/start")
+async def oauth_start(provider: str):
+    """Начало OAuth авторизации"""
+    try:
+        auth_url = get_oauth_url(provider)
+        return RedirectResponse(url=auth_url)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.get("/oauth/{provider}/callback")
+async def oauth_callback(provider: str, code: str, state: str = None):
+    """Callback после OAuth авторизации"""
+    try:
+        # Обмен кода на токены
+        token_data = await exchange_code_for_token(provider, code)
+        
+        access_token = token_data.get('access_token')
+        refresh_token = token_data.get('refresh_token')
+        expires_in = token_data.get('expires_in', 3600)
+        
+        # Получаем email пользователя
+        user_email = await get_user_email(provider, access_token)
+        
+        # Вычисляем время истечения токена
+        from datetime import datetime, timedelta
+        expiry = (datetime.now() + timedelta(seconds=expires_in)).isoformat()
+        
+        # Сохраняем в БД (user_id берём из state параметра)
+        user_id = state or 'test_user_123'
+        
+        db.update_profile(
+            user_id,
+            email_provider=provider,
+            email_address=user_email,
+            email_access_token=access_token,
+            email_refresh_token=refresh_token,
+            email_token_expiry=expiry
+        )
+        
+        # Редирект обратно в приложение
+        return RedirectResponse(url=f"{BACKEND_URL}/settings?success=true")
+        
+    except Exception as e:
+        return RedirectResponse(url=f"{BACKEND_URL}/settings?error={str(e)}")
+
+
+@app.post("/api/send_email")
+async def send_email(request: Request):
+    """Отправка письма кандидату"""
+    data = await request.json()
+    
+    user_id = data.get('user_id')
+    to_email = data.get('to_email')
+    subject = data.get('subject')
+    body = data.get('body')
+    
+    # Получаем профиль пользователя
+    profile = db.get_profile(user_id)
+    if not profile or not profile.get('email_access_token'):
+        raise HTTPException(status_code=400, detail="Почта не подключена")
+    
+    provider = profile.get('email_provider')
+    access_token = profile.get('email_access_token')
+    from_email = profile.get('email_address')
+    
+    # Отправляем письмо
+    result = await send_email_via_oauth(
+        provider=provider,
+        access_token=access_token,
+        from_email=from_email,
+        to_email=to_email,
+        subject=subject,
+        body=body
+    )
+    
+    return result
