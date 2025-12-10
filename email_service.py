@@ -23,8 +23,12 @@ MAILRU_REDIRECT_URI = os.getenv('MAILRU_REDIRECT_URI')
 BACKEND_URL = os.getenv('WEBAPP_URL', 'http://localhost:8000')
 
 
-def get_oauth_url(provider: str) -> str:
+def get_oauth_url(provider: str, state: str = None) -> str:
     """Получить URL для OAuth авторизации"""
+    
+    # ВАЖНО: state должен быть передан!
+    if not state:
+        state = 'default_user'
     
     if provider == 'google':
         return (
@@ -34,6 +38,7 @@ def get_oauth_url(provider: str) -> str:
             f"response_type=code&"
             f"scope=https://www.googleapis.com/auth/gmail.send&"
             f"access_type=offline&"
+            f"state={state}&"
             f"prompt=consent"
         )
     
@@ -43,6 +48,7 @@ def get_oauth_url(provider: str) -> str:
             f"client_id={YANDEX_CLIENT_ID}&"
             f"redirect_uri={YANDEX_REDIRECT_URI}&"
             f"response_type=code&"
+            f"state={state}&"
             f"force_confirm=yes"
         )
     
@@ -52,7 +58,8 @@ def get_oauth_url(provider: str) -> str:
             f"client_id={MAILRU_CLIENT_ID}&"
             f"redirect_uri={MAILRU_REDIRECT_URI}&"
             f"response_type=code&"
-            f"scope=userinfo mail.imap"
+            f"scope=userinfo mail.imap&"
+            f"state={state}"
         )
     
     raise ValueError(f"Неизвестный провайдер: {provider}")
@@ -95,6 +102,7 @@ async def exchange_code_for_token(provider: str, code: str) -> Dict[str, Any]:
     
     async with httpx.AsyncClient() as client:
         response = await client.post(url, data=data)
+        response.raise_for_status()
         return response.json()
 
 
@@ -120,8 +128,14 @@ async def get_user_email(provider: str, access_token: str) -> str:
             return data.get('default_email', '')
     
     elif provider == 'mailru':
-        # Mail.ru возвращает email в ответе на токен
-        return ""  # Нужно будет запросить отдельно через их API
+        # Mail.ru API для получения email
+        url = "https://oauth.mail.ru/userinfo"
+        headers = {"Authorization": f"Bearer {access_token}"}
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url, headers=headers)
+            data = response.json()
+            return data.get('email', '')
     
     return ""
 
@@ -161,8 +175,6 @@ async def send_email_via_oauth(
     
     elif provider == 'yandex':
         # Яндекс использует SMTP с OAuth
-        # Потребуется использовать smtplib с XOAUTH2
-        # Пока упрощённая версия через их API (если есть)
         return {"status": "error", "message": "Yandex SMTP требует дополнительной настройки"}
     
     elif provider == 'mailru':

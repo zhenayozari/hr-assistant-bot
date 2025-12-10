@@ -357,50 +357,6 @@ if __name__ == "__main__":
 # === OAUTH ENDPOINTS ===
 
 @app.get("/oauth/{provider}/start")
-async def oauth_start(provider: str):
-    """Начало OAuth авторизации"""
-    try:
-        auth_url = get_oauth_url(provider)
-        return RedirectResponse(url=auth_url)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-@app.get("/oauth/{provider}/callback")
-async def oauth_callback(provider: str, code: str, state: str = None):
-    """Callback после OAuth авторизации"""
-    try:
-        # Обмен кода на токены
-        token_data = await exchange_code_for_token(provider, code)
-        
-        access_token = token_data.get('access_token')
-        refresh_token = token_data.get('refresh_token')
-        expires_in = token_data.get('expires_in', 3600)
-        
-        # Получаем email пользователя
-        user_email = await get_user_email(provider, access_token)
-        
-        # Вычисляем время истечения токена
-        from datetime import datetime, timedelta
-        expiry = (datetime.now() + timedelta(seconds=expires_in)).isoformat()
-        
-        # Сохраняем в БД (user_id берём из state параметра)
-        user_id = state or 'test_user_123'
-        
-        db.update_profile(
-            user_id,
-            email_provider=provider,
-            email_address=user_email,
-            email_access_token=access_token,
-            email_refresh_token=refresh_token,
-            email_token_expiry=expiry
-        )
-        
-        # Редирект обратно в приложение
-        return RedirectResponse(url=f"{BACKEND_URL}/settings?success=true")
-        
-    except Exception as e:
-        return RedirectResponse(url=f"{BACKEND_URL}/settings?error={str(e)}")
 
 
 @app.post("/api/send_email")
