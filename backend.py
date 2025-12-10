@@ -357,10 +357,101 @@ if __name__ == "__main__":
 # === OAUTH ENDPOINTS ===
 
 @app.get("/oauth/{provider}/start")
+@app.get("/oauth/{provider}/start")
+async def oauth_start(provider: str, state: str = "test_user_123"):
+    """Начало OAuth авторизации"""
+    try:
+        # Формируем URL вручную с state
+        if provider == 'google':
+            auth_url = (
+                f"https://accounts.google.com/o/oauth2/v2/auth?"
+                f"client_id={os.getenv('GOOGLE_CLIENT_ID')}&"
+                f"redirect_uri={os.getenv('GOOGLE_REDIRECT_URI')}&"
+                f"response_type=code&"
+                f"scope=https://www.googleapis.com/auth/gmail.send&"
+                f"access_type=offline&"
+                f"state={state}&"
+                f"prompt=consent"
+            )
+        elif provider == 'yandex':
+            auth_url = (
+                f"https://oauth.yandex.ru/authorize?"
+                f"client_id={os.getenv('YANDEX_CLIENT_ID')}&"
+                f"redirect_uri={os.getenv('YANDEX_REDIRECT_URI')}&"
+                f"response_type=code&"
+                f"state={state}&"
+                f"force_confirm=yes"
+            )
+        elif provider == 'mailru':
+            auth_url = (
+                f"https://oauth.mail.ru/login?"
+                f"client_id={os.getenv('MAILRU_CLIENT_ID')}&"
+                f"redirect_uri={os.getenv('MAILRU_REDIRECT_URI')}&"
+                f"response_type=code&"
+                f"scope=userinfo mail.imap&"
+                f"state={state}"
+            )
+        else:
+            raise HTTPException(status_code=400, detail="Неизвестный провайдер")
+        
+        print(f"🔗 OAuth URL: {auth_url}")  # Для отладки
+        return RedirectResponse(url=auth_url)
+        
+    except Exception as e:
+        print(f"❌ Ошибка OAuth start: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/oauth/{provider}/callback")
+async def oauth_callback(provider: str, code: str, state: str = None):
+    """Callback после OAuth авторизации"""
+    try:
+        print(f"✅ OAuth callback: provider={provider}, code={code[:20]}..., state={state}")
+        
+        # Обмен кода на токены
+        token_data = await exchange_code_for_token(provider, code)
+        
+        access_token = token_data.get('access_token')
+        refresh_token = token_data.get('refresh_token')
+        expires_in = token_data.get('expires_in', 3600)
+        
+        print(f"✅ Получили токен: {access_token[:20]}...")
+        
+        # Получаем email пользователя
+        user_email = await get_user_email(provider, access_token)
+        
+        print(f"✅ Email пользователя: {user_email}")
+        
+        # Вычисляем время истечения токена
+        from datetime import datetime, timedelta
+        expiry = (datetime.now() + timedelta(seconds=expires_in)).isoformat()
+        
+        # Сохраняем в БД (user_id берём из state параметра)
+        user_id = state or 'test_user_123'
+        
+        db.update_profile(
+            user_id,
+            email_provider=provider,
+            email_address=user_email,
+            email_access_token=access_token,
+            email_refresh_token=refresh_token,
+            email_token_expiry=expiry
+        )
+        
+        print(f"✅ Сохранили в БД для user_id={user_id}")
+        
+        # Редирект обратно в приложение
+        return RedirectResponse(url=f"{BACKEND_URL}/settings?success=true")
+        
+    except Exception as e:
+        print(f"❌ Ошибка OAuth callback: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return RedirectResponse(url=f"{BACKEND_URL}/settings?error={str(e)}")
 
 
 @app.post("/api/send_email")
-async def send_email(request: Request):
+async def send_email_endpoint(request: Request):
     """Отправка письма кандидату"""
     data = await request.json()
     
