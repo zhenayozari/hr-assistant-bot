@@ -221,13 +221,13 @@
         }
     }
 
-    // Проверка статуса подключения почты
-    async function checkEmailStatus() {
+    // Проверка статуса подключения почты с повторными попытками
+    async function checkEmailStatus(retries = 0) {
         try {
-            const res = await fetch(`/api/profile/${userId}`);
+            const res = await fetch(`/api/profile/${userId}?t=${Date.now()}`); // Добавляем timestamp чтобы избежать кэша
             const profile = await res.json();
             
-            console.log('📧 Profile:', profile); // Для отладки
+            console.log('📧 Profile (попытка ' + (retries + 1) + '):', profile);
             
             if (profile.email_address) {
                 const providerNames = {
@@ -240,12 +240,17 @@
                 document.getElementById('emailStatusText').innerHTML = 
                     `✅ ${profile.email_address} (${providerName})`;
                 document.getElementById('emailStatus').style.background = '#064e3b';
+                
+                return true; // Успешно получили email
             } else {
                 document.getElementById('emailStatusText').textContent = 'Не подключена';
                 document.getElementById('emailStatus').style.background = '#0f172a';
+                
+                return false; // Email еще не сохранился
             }
         } catch (e) {
             console.error('Ошибка проверки почты:', e);
+            return false;
         }
     }
     
@@ -256,6 +261,7 @@
     
     // ВАЖНО: Проверяем успех подключения СРАЗУ при загрузке
     const urlParams = new URLSearchParams(window.location.search);
+    
     if (urlParams.get('success') === 'true') {
         // Показываем alert
         alert('✅ Почта успешно подключена!');
@@ -263,13 +269,29 @@
         // Убираем ?success=true из URL
         window.history.replaceState({}, document.title, "/settings");
         
-        // Обновляем статус через 500ms (даём время на обновление БД)
-        setTimeout(() => {
-            checkEmailStatus();
-        }, 500);
+        // Пытаемся обновить статус с повторными попытками
+        let attempt = 0;
+        const maxAttempts = 5;
+        const checkInterval = setInterval(async () => {
+            attempt++;
+            console.log(`🔄 Попытка ${attempt}/${maxAttempts} обновить статус почты...`);
+            
+            const success = await checkEmailStatus(attempt - 1);
+            
+            if (success || attempt >= maxAttempts) {
+                clearInterval(checkInterval);
+                if (!success) {
+                    console.warn('⚠️ Не удалось обновить статус почты после ' + maxAttempts + ' попыток');
+                    // Перезагружаем страницу как последнее средство
+                    location.reload();
+                }
+            }
+        }, 1000); // Проверяем каждую секунду
+        
     } else if (urlParams.get('error')) {
         alert('❌ Ошибка: ' + urlParams.get('error'));
         window.history.replaceState({}, document.title, "/settings");
+        checkEmailStatus();
     } else {
         // Обычная загрузка страницы
         checkEmailStatus();
