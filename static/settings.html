@@ -162,97 +162,120 @@
     </div>
 
     <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-        const userId = tg.initDataUnsafe?.user?.id || 'test_user_123';
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+    const userId = tg.initDataUnsafe?.user?.id || 'test_user_123';
 
-        // Загрузка текущих данных
-        async function loadData() {
-            try {
-                const res = await fetch(`/api/profile/${userId}`);
-                const data = await res.json();
-                
-                if (data) {
-                    document.getElementById('companyName').value = data.company_name || '';
-                    document.getElementById('companyDesc').value = data.company_description || '';
-                    document.getElementById('hhClientId').value = data.hh_client_id || '';
-                    document.getElementById('hhEmployerId').value = data.hh_employer_id || '';
-                }
-            } catch (e) {
-                console.error('Ошибка загрузки:', e);
-            }
-        }
-
-        // Сохранение данных
-        async function saveSettings() {
-            const btn = document.querySelector('button.save-btn');
-            const status = document.getElementById('status');
+    // Загрузка текущих данных
+    async function loadData() {
+        try {
+            const res = await fetch(`/api/profile/${userId}`);
+            const data = await res.json();
             
-            btn.disabled = true;
-            btn.textContent = 'Сохранение...';
-            status.textContent = '';
-
-            const payload = {
-                company_name: document.getElementById('companyName').value,
-                company_description: document.getElementById('companyDesc').value,
-                hh_client_id: document.getElementById('hhClientId').value,
-                hh_employer_id: document.getElementById('hhEmployerId').value
-            };
-
-            try {
-                const res = await fetch(`/api/profile/${userId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (res.ok) {
-                    status.textContent = '✅ Сохранено!';
-                    status.className = 'status success';
-                } else {
-                    throw new Error('Ошибка сервера');
-                }
-            } catch (e) {
-                status.textContent = '❌ Ошибка сохранения';
-                status.className = 'status error';
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'Сохранить настройки';
+            if (data) {
+                document.getElementById('companyName').value = data.company_name || '';
+                document.getElementById('companyDesc').value = data.company_description || '';
+                document.getElementById('hhClientId').value = data.hh_client_id || '';
+                document.getElementById('hhEmployerId').value = data.hh_employer_id || '';
             }
+        } catch (e) {
+            console.error('Ошибка загрузки:', e);
         }
+    }
 
-        // Проверка статуса подключения почты
-        async function checkEmailStatus() {
-            try {
-                const res = await fetch(`/api/profile/${userId}`);
-                const profile = await res.json();
+    // Сохранение данных
+    async function saveSettings() {
+        const btn = document.querySelector('button.save-btn');
+        const status = document.getElementById('status');
+        
+        btn.disabled = true;
+        btn.textContent = 'Сохранение...';
+        status.textContent = '';
+
+        const payload = {
+            company_name: document.getElementById('companyName').value,
+            company_description: document.getElementById('companyDesc').value,
+            hh_client_id: document.getElementById('hhClientId').value,
+            hh_employer_id: document.getElementById('hhEmployerId').value
+        };
+
+        try {
+            const res = await fetch(`/api/profile/${userId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                status.textContent = '✅ Сохранено!';
+                status.className = 'status success';
+            } else {
+                throw new Error('Ошибка сервера');
+            }
+        } catch (e) {
+            status.textContent = '❌ Ошибка сохранения';
+            status.className = 'status error';
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Сохранить настройки';
+        }
+    }
+
+    // Проверка статуса подключения почты
+    async function checkEmailStatus() {
+        try {
+            const res = await fetch(`/api/profile/${userId}`);
+            const profile = await res.json();
+            
+            console.log('📧 Profile:', profile); // Для отладки
+            
+            if (profile.email_address) {
+                const providerNames = {
+                    'google': 'Gmail',
+                    'yandex': 'Яндекс',
+                    'mailru': 'Mail.ru'
+                };
+                const providerName = providerNames[profile.email_provider] || profile.email_provider;
                 
-                if (profile.email_address) {
-                    document.getElementById('emailStatusText').innerHTML = 
-                        `✅ ${profile.email_address} (${profile.email_provider})`;
-                    document.getElementById('emailStatus').style.background = '#064e3b';
-                }
-            } catch (e) {
-                console.error('Ошибка проверки почты:', e);
+                document.getElementById('emailStatusText').innerHTML = 
+                    `✅ ${profile.email_address} (${providerName})`;
+                document.getElementById('emailStatus').style.background = '#064e3b';
+            } else {
+                document.getElementById('emailStatusText').textContent = 'Не подключена';
+                document.getElementById('emailStatus').style.background = '#0f172a';
             }
+        } catch (e) {
+            console.error('Ошибка проверки почты:', e);
         }
+    }
+    
+    // Подключение почты
+    function connectEmail(provider) {
+        window.location.href = `/oauth/${provider}/start?state=${userId}`;
+    }
+    
+    // ВАЖНО: Проверяем успех подключения СРАЗУ при загрузке
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('success') === 'true') {
+        // Показываем alert
+        alert('✅ Почта успешно подключена!');
         
-        // Подключение почты
-        function connectEmail(provider) {
-            window.location.href = `/oauth/${provider}/start?state=${userId}`;
-        }
+        // Убираем ?success=true из URL
+        window.history.replaceState({}, document.title, "/settings");
         
-        // Проверяем успех подключения (из URL параметров)
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('success') === 'true') {
-            alert('✅ Почта успешно подключена!');
+        // Обновляем статус через 500ms (даём время на обновление БД)
+        setTimeout(() => {
             checkEmailStatus();
-        } else if (urlParams.get('error')) {
-            alert('❌ Ошибка: ' + urlParams.get('error'));
-        }
-        
-        loadData();
+        }, 500);
+    } else if (urlParams.get('error')) {
+        alert('❌ Ошибка: ' + urlParams.get('error'));
+        window.history.replaceState({}, document.title, "/settings");
+    } else {
+        // Обычная загрузка страницы
         checkEmailStatus();
-    </script>
+    }
+    
+    loadData();
+</script>
 </body>
 </html>
