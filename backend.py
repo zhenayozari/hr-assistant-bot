@@ -357,7 +357,6 @@ if __name__ == "__main__":
 # === OAUTH ENDPOINTS ===
 
 @app.get("/oauth/{provider}/start")
-@app.get("/oauth/{provider}/start")
 async def oauth_start(provider: str, state: str = "test_user_123"):
     """Начало OAuth авторизации"""
     try:
