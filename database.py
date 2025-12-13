@@ -239,16 +239,18 @@ class Database:
         cand_count = cursor.fetchone()[0]
         
         # Подходящие кандидаты (подсчёт из JSON)
-        cursor.execute("SELECT analysis_result FROM candidates WHERE user_id = ?", (user_id,))
+        cursor.execute("SELECT id, analysis_result FROM candidates WHERE user_id = ?", (user_id,))
         rows = cursor.fetchall()
         suitable_count = 0
         for row in rows:
             try:
-                analysis = json.loads(row[0]) if row[0] else {}
+                analysis = json.loads(row[1]) if row[1] else {}
                 if analysis.get('verdict') == 'Подходит':
                     suitable_count += 1
-            except:
-                pass
+            except json.JSONDecodeError as e:
+                print(f"⚠️ Warning: Failed to parse analysis_result for candidate {row[0]}: {e}")
+                # Continue processing other candidates
+                continue
         
         conn.close()
         
